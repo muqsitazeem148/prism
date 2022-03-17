@@ -327,7 +327,7 @@ public interface Reducible<E, E_CAT>
 	 */
 	default Reducible<E,E_CAT> dedupe()
 	{
-		Predicate<E> isFirst = new Predicate<>()
+		Predicate<E> isFirst = new Predicate<E>()
 		{
 			Object previous = new Object();
 

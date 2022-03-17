@@ -41,11 +41,7 @@ import parser.Values;
 import parser.ast.ASTElement;
 import parser.ast.Expression;
 import parser.ast.RewardStruct;
-import prism.PrismComponent;
-import prism.PrismException;
-import prism.PrismLangException;
-import prism.PrismNotSupportedException;
-import prism.RewardGenerator;
+import prism.*;
 import prism.RewardGenerator.RewardLookup;
 
 public class ConstructRewards extends PrismComponent
@@ -53,6 +49,11 @@ public class ConstructRewards extends PrismComponent
 	public ConstructRewards(PrismComponent parent)
 	{
 		super(parent);
+	}
+
+	public ConstructRewards(PrismLog mainLog)
+	{
+		this.mainLog = mainLog;
 	}
 
 	/** Allow negative rewards, i.e., weights. Defaults to false. */
@@ -144,7 +145,7 @@ public class ConstructRewards extends PrismComponent
 	 * @param s The index of the state
 	 * @param rewardGen The RewardGenerator defining the rewards
 	 * @param r The index of the reward structure to build
-	 * @param statesLists List of states (maybe needed for state look up)
+	 * @param statesList List of states (maybe needed for state look up)
 	 */
 	private double getAndCheckStateReward(int s, RewardGenerator rewardGen, int r, List<State> statesList) throws PrismException
 	{
@@ -170,7 +171,7 @@ public class ConstructRewards extends PrismComponent
 	 * @param s The index of the state
 	 * @param rewardGen The RewardGenerator defining the rewards
 	 * @param r The index of the reward structure to build
-	 * @param statesLists List of states (maybe needed for state look up)
+	 * @param statesList List of states (maybe needed for state look up)
 	 */
 	private double getAndCheckStateActionReward(int s, Object action, RewardGenerator rewardGen, int r, List<State> statesList) throws PrismException
 	{
@@ -367,7 +368,7 @@ public class ConstructRewards extends PrismComponent
 	
 	/**
 	 * Construct the rewards for an MDP from files exported explicitly by PRISM.
-	 * @param model The MDP
+	 * @param mdp The MDP
 	 * @param rews The file containing state rewards (ignored if null)
 	 * @param rewt The file containing transition rewards (ignored if null)
 	 */

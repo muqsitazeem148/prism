@@ -131,6 +131,7 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 	public static final int MDP_MULTI_VALITER = 1;
 	public static final int MDP_MULTI_GAUSSSEIDEL = 2;
 	public static final int MDP_MULTI_LP = 3;
+	public static final int MDP_MULTI_GUROBI = 4;
 
 	// termination criterion for iterative methods
 	public static final int ABSOLUTE = 1;
@@ -2899,6 +2900,19 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		if (currentModelType == ModelType.MDP && !Expression.containsMultiObjective(prop.getExpression())) {
 			if (getMDPSolnMethod() != Prism.MDP_VALITER && !getExplicit()) {
 				mainLog.printWarning("Switching to explicit engine to allow use of chosen MDP solution method.");
+				engineSwitch = true;
+				lastEngine = getEngine();
+				setEngine(Prism.EXPLICIT);
+			}
+		}
+		if (currentModelType == ModelType.MDP && Expression.containsMultiObjective(prop.getExpression())) {
+			if (settings.getChoice(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD) != Prism.MDP_MULTI_LP
+					&& settings.getChoice(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD) != Prism.MDP_MULTI_GUROBI) {
+				mainLog.printWarning("Switching to linear programming method to allow verification of the formula.");
+				settings.setChoice(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD, Prism.MDP_MULTI_LP);
+			}
+			if (settings.getChoice(PrismSettings.PRISM_ENGINE) != Prism.EXPLICIT && !getExplicit()) {
+				mainLog.printWarning("Switching to explicit engine to allow verification of the formula.");
 				engineSwitch = true;
 				lastEngine = getEngine();
 				setEngine(Prism.EXPLICIT);

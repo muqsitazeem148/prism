@@ -26,13 +26,8 @@
 
 package explicit;
 
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.PrimitiveIterator;
 
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
@@ -43,23 +38,12 @@ import common.StopWatch;
 import explicit.modelviews.EquivalenceRelationInteger;
 import explicit.modelviews.MDPDroppedAllChoices;
 import explicit.modelviews.MDPEquiv;
-import explicit.rewards.MCRewards;
-import explicit.rewards.MCRewardsFromMDPRewards;
-import explicit.rewards.MDPRewards;
-import explicit.rewards.Rewards;
-import parser.ast.Expression;
+import explicit.rewards.*;
+import parser.ast.*;
 import parser.type.TypeDouble;
-import prism.AccuracyFactory;
-import prism.OptionsIntervalIteration;
-import prism.Prism;
-import prism.PrismComponent;
-import prism.PrismDevNullLog;
-import prism.PrismException;
-import prism.PrismFileLog;
-import prism.PrismLog;
-import prism.PrismNotSupportedException;
-import prism.PrismSettings;
-import prism.PrismUtils;
+import parser.type.TypeVoid;
+import prism.*;
+import prism.Filter;
 import strat.MDStrategyArray;
 
 /**
@@ -76,6 +60,196 @@ public class MDPModelChecker extends ProbModelChecker
 	}
 	
 	// Model checking functions
+
+
+	@Override
+	protected StateValues checkExpressionMultiObjective(Model model,
+														ExpressionFunc expr) throws PrismException
+	{
+		boolean memoryless;
+		if (((ExpressionFunc) expr).getName().equals("multi"))
+			memoryless = false;
+		else if (((ExpressionFunc) expr).getName().equals("mlessmulti"))
+			memoryless = true;
+		else throw new UnsupportedOperationException("Unsupported function: " + expr);
+
+		// Make sure we are only expected to compute a value for a single state
+		if (currentFilter == null || !(currentFilter.getOperator() == Filter.FilterOperator.STATE))
+			throw new PrismException("Multi-objective model checking can only compute values from a single state");
+
+		int numObjectives = expr.getNumOperands();
+
+		ArrayList<Operator> operators = new ArrayList<Operator>();
+		ArrayList<Double> bounds = new ArrayList<Double>();
+		ArrayList<MDPRewards> rewards = new ArrayList<MDPRewards>();
+
+		int numericalCount = 0; //used to determine if we do multi-obj.
+		ArrayList<Integer> numericalIndices = new ArrayList<Integer>();
+		//extract data
+		for (int i = 0; i < numObjectives; i++) {
+			if (expr.getOperand(i) instanceof ExpressionReward) {
+				ExpressionReward operand = (ExpressionReward) expr.getOperand(i);
+				RelOp relOp = operand.getRelOp();
+
+				//check that the parameters are of the form we can handle
+				if (!(operand.getExpression() instanceof ExpressionTemporal))
+					throw new PrismException("The reward subexpression must be a temporal expression.");
+				ExpressionTemporal eT = (ExpressionTemporal) operand.getExpression();
+				if (eT.getOperator() != ExpressionTemporal.R_S)
+					throw new PrismException("We only support steady state (long-run) rewards.");
+
+				//comparison operator
+				Operator op;
+				switch (relOp) {
+					case MAX:
+						numericalCount++;
+						numericalIndices.add(i);
+						op = Operator.R_MAX;
+						break;
+					case GT:// currently do not support
+						//relOps.add(1);
+						throw new PrismException("Multi-objective properties can not use strict inequalities on P/R operators");
+					case GEQ:
+						op = Operator.R_GE;
+						break;
+					case MIN:
+						numericalCount++;
+						numericalIndices.add(i);
+						op = Operator.R_MIN;
+						break;
+					case LT:
+						//relOps.add(6);
+						throw new PrismException("Multi-objective properties can not use strict inequalities on P/R operators");
+					case LEQ:
+						op = Operator.R_LE;
+						break;
+					default:
+						throw new PrismException("Multi-objective properties can only contain P/R operators with max/min=? or lower/upper probability bounds");
+				}
+				operators.add(op);
+
+				// Store rewards bound
+				Expression rb = operand.getReward();
+
+				if (rb != null) {
+					double p = rb.evaluateDouble(constantValues);
+					bounds.add(p);
+				} else {
+					bounds.add(-1.0);
+				}
+
+				Object rs = operand.getRewardStructIndex();
+				RewardStruct rewStruct = null;
+				// Get reward info
+				if (modulesFile == null)
+					throw new PrismException("No model file to obtain reward structures");
+				if (modulesFile.getNumRewardStructs() == 0)
+					throw new PrismException("Model has no rewards specified");
+				if (rs == null) {
+					rewStruct = modulesFile.getRewardStruct(0);
+				} else if (rs instanceof Expression) {
+					i = ((Expression) rs).evaluateInt(constantValues);
+					rs = new Integer(i); // for better error reporting below
+					rewStruct = modulesFile.getRewardStruct(i - 1);
+				} else if (rs instanceof String) {
+					rewStruct = modulesFile.getRewardStructByName((String) rs);
+				}
+				if (rewStruct == null)
+					throw new PrismException("Invalid reward structure index \"" + rs + "\"");
+
+				// Build rewards
+				ConstructRewards constructRewards = new ConstructRewards(mainLog);
+				MDPRewards mdpRewards = constructRewards.buildMDPRewardStructure((MDP) model, rewStruct, constantValues);
+				rewards.add(mdpRewards);
+
+			} else {
+				throw new PrismException("Only long-run properties are supported.");
+			}
+		}
+
+		String method = this.settings.getString(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD);
+		MultiLongRun mlr = new MultiLongRun((MDP) model, rewards, operators, bounds, method);
+		StateValues sv = null;
+		mlr.createMultiLongRunLP(memoryless);
+		if (numericalCount > 0 && memoryless)
+			throw new PrismException("mlessmulti can only be used for non-numerical queries" +
+					" (optimal memoryless strategies might not exist, and so max/min would not apply)");
+		else if (numericalCount == 0 && memoryless) {
+			sv = mlr.solveMemoryless();
+			//if (generateStrategy)
+				//this.strategy = mlr.getStrategy(memoryless);
+		} else if (numericalCount < 2) {
+			sv = mlr.solveDefault();
+			//if (generateStrategy)
+				//this.strategy = mlr.getStrategy(memoryless);
+		} else {//Pareto
+			ArrayList<Point> computedPoints = new ArrayList<Point>();
+			ArrayList<Point> computedDirections = new ArrayList<Point>();
+			ArrayList<Point> pointsForInitialTile = new ArrayList<Point>();
+			Point p1 = mlr.solveMulti(new Point(new double[] {1.0,0.0}));
+			//mainLog.println("p1 " + p1);
+			Point p2 = mlr.solveMulti(new Point(new double[] {0.0,1.0}));
+			pointsForInitialTile.add(p1);
+			pointsForInitialTile.add(p2);
+			//mainLog.println("p2 " + p2);
+
+			int numberOfPoints = 2;
+			boolean verbose = true;
+			Tile initialTile = new Tile(pointsForInitialTile);
+			TileList tileList = new TileList(initialTile, null, 10e-3);
+
+			Point direction = tileList.getCandidateHyperplane();
+
+			if (verbose) {
+				mainLog.println("The initial direction is " + direction);
+			}
+
+			boolean decided = false;
+			int iters = 0;
+			int output = 0;
+			while (iters < maxIters) {
+				iters++;
+
+				double[] result;
+				Point newPoint = mlr.solveMulti(direction);
+				numberOfPoints++;
+
+				if (verbose) {
+					mainLog.println("\n" + numberOfPoints + ": New point is " + newPoint + ".");
+					mainLog.println("TileList:" + tileList);
+				}
+
+				computedPoints.add(newPoint);
+				computedDirections.add(direction);
+
+				tileList.addNewPoint(newPoint);
+				//mainLog.println("\nTiles after adding: " + tileList);
+				//compute new direction
+				direction = tileList.getCandidateHyperplane();
+
+				if (verbose) {
+					mainLog.println("New direction is " + direction);
+					//mainLog.println("TileList: " + tileList);
+
+				}
+
+				if (direction == null) {
+					//no tile could be improved
+					decided = true;
+					break;
+				}
+			}
+
+			//TODO 0 and 1 should not be hardcoded, what if we have more objectives?
+			TileList.addStoredTileList(expr, expr.getOperand(numericalIndices.get(0)),
+					expr.getOperand(numericalIndices.get(1)), tileList);
+			sv = new StateValues(TypeVoid.getInstance(), tileList, model);
+		}
+
+		return sv;
+	}
+
+
 
 	@Override
 	protected StateValues checkProbPathFormulaLTL(Model model, Expression expr, boolean qual, MinMax minMax, BitSet statesOfInterest) throws PrismException

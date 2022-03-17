@@ -65,6 +65,8 @@ public class StateValues implements StateVector, Iterable<Object>
 	protected Type type;
 	/** Size of vector */
 	protected int size;
+
+
 	/** Computed accuracy of stored values (optional) */
 	public Accuracy accuracy = null;
 	
@@ -74,7 +76,9 @@ public class StateValues implements StateVector, Iterable<Object>
 	protected List<State> statesList;
 
 	// Vector storage (only one used, depending on type)
-	
+
+	protected int[] valuesI;
+	protected double[] valuesD;
 	/** Specialised storage for boolean values */
 	protected BitSet valuesB;
 	/** General purpose storage for other value types */
@@ -111,7 +115,23 @@ public class StateValues implements StateVector, Iterable<Object>
 	{
 		public Object apply(int i) throws PrismException;
 	}
-	
+
+	// METHODS TO MODIFY VECTOR
+	public void setIntValue(int i, int val)
+	{
+		valuesI[i] = val;
+	}
+
+	public void setDoubleValue(int i, double val)
+	{
+		valuesD[i] = val;
+	}
+
+	public void setBooleanValue(int i, boolean val)
+	{
+		valuesB.set(i, val);
+	}
+
 	// Constructors
 
 	/**

@@ -35,14 +35,7 @@ import explicit.rewards.MCRewards;
 import explicit.rewards.MDPRewards;
 import explicit.rewards.Rewards;
 import explicit.rewards.STPGRewards;
-import parser.ast.Coalition;
-import parser.ast.Expression;
-import parser.ast.ExpressionProb;
-import parser.ast.ExpressionReward;
-import parser.ast.ExpressionSS;
-import parser.ast.ExpressionStrategy;
-import parser.ast.ExpressionTemporal;
-import parser.ast.ExpressionUnaryOp;
+import parser.ast.*;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import parser.type.TypePathBool;
@@ -526,12 +519,22 @@ public class ProbModelChecker extends NonProbModelChecker
 		else if (expr instanceof ExpressionSS) {
 			res = checkExpressionSteadyState(model, (ExpressionSS) expr);
 		}
+		//Multi-objective model-checking
+		else if (expr instanceof ExpressionFunc
+				&& (((ExpressionFunc) expr).getName().equals("multi") || ((ExpressionFunc) expr).getName().equals("mlessmulti"))) {
+			res = checkExpressionMultiObjective(model, (ExpressionFunc) expr);
+		}
 		// Otherwise, use the superclass
 		else {
 			res = super.checkExpression(model, expr, statesOfInterest);
 		}
 
 		return res;
+	}
+
+	protected StateValues checkExpressionMultiObjective(Model model, ExpressionFunc expr) throws PrismException
+	{
+		throw new PrismException("Multi-objective model-checking is not available for this type of models");
 	}
 
 	/**
@@ -864,6 +867,8 @@ public class ProbModelChecker extends NonProbModelChecker
 		result.setStrategy(res.strat);
 		return StateValues.createFromDoubleArrayResult(res, model);
 	}
+
+
 
 	/**
 	 * Compute probabilities for an LTL path formula

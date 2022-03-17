@@ -27,6 +27,7 @@
 package prism;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import parser.ast.Expression;
@@ -143,6 +144,25 @@ public class TileList
 		if (this.dim == 2) {
 			this.currentProjectionIndex = 2;
 		}
+	}
+
+
+	/**
+	 * Stores a TileList so that it can be retrieved for visualisation in multi-objective
+	 * verification
+	 * @param formula Formula to which the tile list corresponds
+	 * @param formulaX Formula that should be used as an X axis label
+	 * @param formulaY Formula that should be used as an Y axis label
+	 * @param tl
+	 */
+	public static void addStoredTileList(Expression formula, Expression formulaX, Expression formulaY, TileList tl)
+	{
+		//TODO test
+		storedFormulas.add(Arrays.asList(formula));
+		storedFormulasX.add(formulaX);
+		storedFormulasY.add(formulaY);
+		storedTileLists.add(tl);
+
 	}
 
 	@Override

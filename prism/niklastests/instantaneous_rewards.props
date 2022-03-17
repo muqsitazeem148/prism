@@ -1,0 +1,1 @@
+multi(R{"rewards2"}max=? [I=20], R{"rewards1"}max=? [I=3])
