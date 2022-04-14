@@ -488,10 +488,17 @@ public class NondetModelChecker extends NonProbModelChecker
 		DA<BitSet,AcceptanceRabin>[] dra;
 		// State index info
 		// Misc
+		boolean ismpobjective = true;
 		boolean negateresult = false;
 		int conflictformulae = 0;
 		boolean hasMaxReward = false;
 		//boolean hasLTLconstraint = false;
+
+		//Check if all objectives are mean-payoff objective. In that case multi objective model checking can also be performed using a different algorithm.
+		for (Expression i : exprs){
+			if (((ExpressionTemporal)((ExpressionQuant)i).getExpression()).getOperator() != 14 )
+				ismpobjective = false;
+		}
 
 		if (fairness) {
 			JDD.Deref(statesOfInterest);
@@ -588,7 +595,9 @@ public class NondetModelChecker extends NonProbModelChecker
 		}
 
 		// Removing actions with non-zero reward from the product for maximum cases
-		if (hasMaxReward /*& hasLTLconstraint*/) {
+
+
+		if (!ismpobjective && hasMaxReward /*& hasLTLconstraint*/) {
 			mcMo.removeNonZeroMecsForMax(modelProduct, mcLtl, transRewardsList, opsAndBounds, numObjectives, dra, draDDRowVars, draDDColVars);
 		}
 
@@ -690,7 +699,7 @@ public class NondetModelChecker extends NonProbModelChecker
 		try {
 			// Do multi-objective computation
 			value = mcMo.computeMultiReachProbs(modelProduct, mcLtl, transRewardsListProduct, modelProduct.getStart(), targetDDs, multitargetDDs, multitargetIDs, opsAndBounds,
-			                                    conflictformulae > 1);
+			                                    conflictformulae > 1, ismpobjective);
 		} finally {
 			// Deref, clean up
 			JDD.Deref(stateOfInterest);
@@ -798,8 +807,8 @@ public class NondetModelChecker extends NonProbModelChecker
 		}
 		if (exprReward != null) {
 			ExpressionTemporal exprTemp = ((ExpressionTemporal) exprReward.getExpression());
-			// We only allow C or C<=k reward operators, others such as F are not supported currently
-			if (exprTemp.getOperator() != ExpressionTemporal.R_C) {
+			// We only allow C or C<=k or S reward operators, others such as F are not supported currently
+			if (exprTemp.getOperator() != ExpressionTemporal.R_C && exprTemp.getOperator() != ExpressionTemporal.R_S) {
 				throw new PrismException("Only the C and C>=k reward operators are currently supported for multi-objective properties (not "
 						+ exprTemp.getOperatorSymbol() + ")");
 			}

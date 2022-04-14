@@ -2907,12 +2907,13 @@ public class Prism extends PrismComponent implements PrismSettingsListener
 		}
 		if (currentModelType == ModelType.MDP && Expression.containsMultiObjective(prop.getExpression())) {
 			if (settings.getChoice(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD) != Prism.MDP_MULTI_LP
-					&& settings.getChoice(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD) != Prism.MDP_MULTI_GUROBI) {
-				mainLog.printWarning("Switching to linear programming method to allow verification of the formula.");
+					&& settings.getChoice(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD) != Prism.MDP_MULTI_GUROBI
+					&& settings.getChoice(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD) != Prism.MDP_MULTI_VALITER){
+				mainLog.printWarning("Switching to linear programming method since no option was specified");
 				settings.setChoice(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD, Prism.MDP_MULTI_LP);
 			}
-			if (settings.getChoice(PrismSettings.PRISM_ENGINE) != Prism.EXPLICIT && !getExplicit()) {
-				mainLog.printWarning("Switching to explicit engine to allow verification of the formula.");
+			if (settings.getChoice(PrismSettings.PRISM_ENGINE) != Prism.EXPLICIT && !getExplicit() && settings.getChoice(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD) != Prism.MDP_MULTI_VALITER) {
+				mainLog.printWarning("Switching to explicit engine since no other option was specified");
 				engineSwitch = true;
 				lastEngine = getEngine();
 				setEngine(Prism.EXPLICIT);

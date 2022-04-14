@@ -372,6 +372,33 @@ public class PrismSparse
 			return ret;
 	
 	}
+
+	private static native double[] PS_NondetMultiMP(long odd, long rv, int nrv, long cv, int ncv, long ndv, int nndv, boolean minmax, long start, long ptr_adversary, long ptr_TransSparseMatrix, List<String> synchs, long[] ptr_yes_vec, int[] probStepBounds, long[] ptr_RewSparseMatrix, double[] rewardWeights, int[] rewardStepBounds);
+	public static double[] NondetMultiMP(ODDNode odd, JDDVars rows, JDDVars cols, JDDVars nondet, boolean minmax, JDDNode start, NativeIntArray adversary, NDSparseMatrix transSparseMatrix, List<String> synchs, DoubleVector[] yes_vec, int[] probStepBounds, NDSparseMatrix[] rewSparseMatrix, double[] rewardWeights, int[] rewardStepBounds) throws PrismException
+	{
+		checkNumStates(odd);
+		PrismNative.resetModelCheckingInfo();
+		long[] ptr_ndsp_r = null;
+		if (rewSparseMatrix != null) {
+			ptr_ndsp_r = new long[rewSparseMatrix.length];
+			for (int i = 0; i < ptr_ndsp_r.length; i++)
+				ptr_ndsp_r[i] = (rewSparseMatrix[i]!=null) ? rewSparseMatrix[i].getPtr() : 0;
+		}
+
+		long[] ptr_yes_vec = null;
+		if (yes_vec != null) {
+			ptr_yes_vec = new long[yes_vec.length];
+			for (int i = 0; i < yes_vec.length; i++)
+				ptr_yes_vec[i] = (yes_vec[i]!=null) ? yes_vec[i].getPtr() : 0;
+		}
+
+		double[] ret = PS_NondetMultiMP(odd.ptr(), rows.array(), rows.n(), cols.array(), cols.n(), nondet.array(), nondet.n(), minmax, start.ptr(), adversary.getPtr(), transSparseMatrix.getPtr(), synchs, ptr_yes_vec, probStepBounds, ptr_ndsp_r, rewardWeights, rewardStepBounds);
+		if (ret == null)
+			throw new PrismException(getErrorMessage());
+		else
+			return ret;
+
+	}
 	
 	private static native double[] PS_NondetMultiObjGS(long odd, long rv, int nrv, long cv, int ncv, long ndv, int nndv, boolean minmax, long start, long ptr_adversary, long ptr_TransSparseMatrix, long[] ptr_yes_vec, long[] ptr_RewSparseMatrix, double[] rewardWeights);
 	public static double[] NondetMultiObjGS(ODDNode odd, JDDVars rows, JDDVars cols, JDDVars nondet, boolean minmax, JDDNode start, NativeIntArray adversary, NDSparseMatrix transSparseMatrix, DoubleVector[] yes_vec, NDSparseMatrix[] rewSparseMatrix, double[] rewardWeights) throws PrismException

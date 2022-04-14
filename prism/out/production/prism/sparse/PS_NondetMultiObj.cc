@@ -179,7 +179,7 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
 		
 		for(int rewi = 0; rewi < lenRew; rewi++)
 			ndsm_r[rewi] = (NDSparseMatrix *) jlong_to_NDSparseMatrix(ptr_ndsm_r[rewi]);
-		
+
 		int max_step_bound = 0;
 		for(int rewi = 0; rewi < lenRew; rewi++) {
 			if (step_bounds_r[rewi] == -1)
@@ -554,7 +554,7 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
 					}
 					break;
 			}
-			
+
 			//we can't stop if some of the objectives are step bounded,
 			//maybe they were deactivated until now, so set the iters count so that
 			//max_step_bound more iterations will be performed
