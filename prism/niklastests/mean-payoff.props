@@ -1,1 +1,1 @@
-multi(R{"rewards3"}max=? [S], R{"rewards4"}max=? [S])
+multi(R{"rewards1"}max=? [S], R{"rewards2"}max=? [S])

@@ -740,7 +740,7 @@ public class MultiObjModelChecker extends PrismComponent
 		if (numNumericalObjectives >= 2) {
 			if (isMP) {
 
-				return generateParetoMP(modelProduct, yes_ones, maybe, start, targets, rewards, opsAndBounds);
+				return generateParetoMEC(modelProduct, yes_ones, maybe, start, targets, rewards, opsAndBounds);
 			}
 			else {
 				return generateParetoCurve(modelProduct, yes_ones, maybe, start, targets, rewards, opsAndBounds);
@@ -750,8 +750,58 @@ public class MultiObjModelChecker extends PrismComponent
 		}
 	}
 
-
 	protected TileList generateParetoMP(NondetModel modelProduct, JDDNode yes_ones, JDDNode maybe, final JDDNode st, JDDNode[] targets,
+										 List<JDDNode> rewards, OpsAndBoundsList opsAndBounds) throws PrismException
+	{
+		//TODO
+
+		if (modelProduct.getNumStartStates() > 1) {
+			throw new UnsupportedOperationException("Can't run MP with multiple initial states.");
+		}
+
+		//Initialize MECComputer, etc.
+		ECComputer mecComputer = new ECComputerDefault(this, modelProduct.getReach(), modelProduct.getTrans(), modelProduct.getTrans01(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(), modelProduct.getAllDDNondetVars());
+		List<TileList> solutions = new ArrayList<TileList>();
+		AdaptedMDPQuotient transform = null;
+		MDPRestricted restrict = null;
+		NondetModel transformed = null;
+		NondetModel MECrestricted = null;
+
+		//Comput MECs
+		mainLog.println("Discovering MECs... ");
+		mecComputer.computeMECStates();
+		List<JDDNode> mecs = mecComputer.getMECStates();
+
+		//Perform local value iteration on every MEC
+		for (JDDNode m : mecs){
+			JDDNode trans = mecComputer.getStableTransitions(m);
+			restrict = MDPRestricted.transform(this, modelProduct, m, trans);
+			MECrestricted = restrict.getTransformedModel();
+			JDDNode yesInQuotient = transform.mapStateSetToQuotient(yes_ones.copy());
+			JDDNode maybeInQuotient = transform.mapStateSetToQuotient(maybe.copy());
+			solutions.add(generateParetoMEC(MECrestricted, yesInQuotient, maybeInQuotient , MECrestricted.getStart(), targets, (List<JDDNode>) MECrestricted.getTransRewards(), opsAndBounds));
+		}
+
+		//Print out the respective solutions for each MEC
+		for (TileList solution : solutions){
+			System.out.println(solution.toString());
+		}
+
+
+		//Build the adapted MEC quotient
+		transform = AdaptedMDPQuotient.transform(this, modelProduct, mecs, modelProduct.getReach().copy());
+		transformed = transform.getTransformedModel();
+
+		List<JDDNode> newRewards = rewards;
+
+
+		//Perform multi-objective weighted value iteration on the adapted MEC quotient and return the result
+		return (TileList) weightedMultiReachProbs(transformed, yes_ones, maybe, transformed.getStart() , null, newRewards, opsAndBounds, false);
+
+	}
+
+
+	protected TileList generateParetoMEC(NondetModel modelProduct, JDDNode yes_ones, JDDNode maybe, final JDDNode st, JDDNode[] targets,
 										   List<JDDNode> rewards, OpsAndBoundsList opsAndBounds) throws PrismException
 	{
 		//TODO check if method works for more than 2 objectives

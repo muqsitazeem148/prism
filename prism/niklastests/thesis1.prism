@@ -1,0 +1,22 @@
+mdp
+
+module a
+
+x: [0..1];
+	 
+	[a] x=0 -> 0.5:(x'=1) + 0.5:(x'=0);
+	[a] x=1 -> 1.0:(x'=0);
+	
+endmodule
+
+rewards "rewards1"
+	[a] true : 2;
+endrewards
+
+
+rewards "rewards2"
+    [a] true : 2;
+endrewards
+
+label "goal" = x=3;
+label "goal2" = x=2;

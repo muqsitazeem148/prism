@@ -43,7 +43,7 @@
 #include <algorithm>
 
 //The following gives more output on stdout. In fact quite a lot of it, usable only for ~10 state examples 
-//#define MORE_OUTPUT
+#define MORE_OUTPUT
 
 //The following number is used to determine when to consider a number equal to 0.
 //Will be multiplied by minimal weights to make sure we don't do too much roundoffs for small weights
@@ -70,7 +70,7 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
  jlongArray  _ndsm_r, //pointer to reward sparse matrix array
  jdoubleArray _weights, //weights of rewards and yes_vec vectors
  jintArray _ndsm_r_step_bounds //step bounds for rewards
-  )
+)
 {
 	// cast function parameters
 	ODDNode *odd = jlong_to_ODDNode(od);      // reachable states
@@ -484,10 +484,10 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
                         //PS_PrintToMainLog(env, "Anzahl Zustände: %d, ", n);
                         for (i = 0; i < n; i++) {
                             delta[i] = fabs(soln2[i] - soln[i]);
-                            //PS_PrintToMainLog(env, "Soln:   %f     Soln2:    %f    Delta[i] %f, \n", soln[i], soln2[i], delta[i]);
+                            PS_PrintToMainLog(env, "Soln:   %f     Soln2:    %f    Delta[i] %f, \n", soln[i], soln2[i], delta[i]);
                         }
                         double span = *std::max_element(delta, delta + n) - *std::min_element(delta, delta + n);
-                        //PS_PrintToMainLog(env, "Span Semi Norm:  %f, \n", span);
+                        PS_PrintToMainLog(env, "Span Semi Norm:  %f, \n", span);
                         if (span > term_crit_param){
                                 weightedDone = false;
                                 goto end;
@@ -619,13 +619,13 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
 		for (int it = 0; it < lenRew ; it++) {
 			PS_PrintToMainLog(env, "%s%f", (it>0?",":""), weights[it]);
 		}
-		PS_PrintToMainLog(env, "] from initial state: %f\n", soln[start_index]);
+		PS_PrintToMainLog(env, "] from initial state: %f\n", soln[start_index]/iters);
 		
 		//copy all computed elements
 		for (int it = 0; it < lenRew ; it++)
 			if (it != ignoredWeight){
-				retNative[it] = psoln[it][start_index]/iters;
-				PS_PrintToMainLog(env, "] from initial state: %i \n", psoln[it][start_index]/iters);
+				retNative[it] = psoln[it][start_index] - psoln2[it][start_index];
+				PS_PrintToMainLog(env, "] from initial state: %i \n", psoln[it][start_index] - psoln2[it][start_index]);
 			}
 		//compute the last element
 		if (ignoredWeight != -1) {

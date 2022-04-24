@@ -27,12 +27,12 @@
 
 package prism;
 
-import java.util.List;
-
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
 import jdd.SanityJDD;
+
+import java.util.List;
 
 /**
  * Transformation for obtaining the quotient MDP for an MDP, given an
@@ -69,7 +69,7 @@ import jdd.SanityJDD;
  * <br>
  * Note as well that evaluating expressions in the quotient model will not lead to correct results.
  */
-public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
+public class AdaptedMDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 {
 	private NondetModel originalModel;
 	private NondetModel transformedModel;
@@ -77,7 +77,7 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 	private JDDNode transformedStatesOfInterest;
 
 	/** Private constructor */
-	private MDPQuotient(NondetModel originalModel, NondetModel transformedModel, MDPQuotientOperator transform, JDDNode transformedStatesOfInterest)
+	private AdaptedMDPQuotient(NondetModel originalModel, NondetModel transformedModel, MDPQuotientOperator transform, JDDNode transformedStatesOfInterest)
 	{
 		this.originalModel = originalModel;
 		this.transformedModel = transformedModel;
@@ -135,7 +135,7 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 	 *
 	 * <br>[ REFs: <i>result</i>, DEREFs: restrict ]
 	 */
-	public static MDPQuotient mecQuotient(PrismComponent parent, final NondetModel model, JDDNode restrict, JDDNode statesOfInterest) throws PrismException
+	public static AdaptedMDPQuotient mecQuotient(PrismComponent parent, final NondetModel model, JDDNode restrict, JDDNode statesOfInterest) throws PrismException
 	{
 		ECComputer ec = ECComputer.createECComputer(parent, model);
 		ec.computeMECStates(restrict);
@@ -150,7 +150,7 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 	 *
 	 * <br>[ REFs: <i>result</i>, DEREFs: equivalenceClasses, statesOfInterest ]
 	 */
-	public static MDPQuotient transform(PrismComponent parent, final NondetModel model, List<JDDNode> equivalentClasses, JDDNode statesOfInterest)
+	public static AdaptedMDPQuotient transform(PrismComponent parent, final NondetModel model, List<JDDNode> equivalentClasses, JDDNode statesOfInterest)
 			throws PrismException
 	{
 		final MDPQuotientOperator transform = new MDPQuotientOperator(parent, model, equivalentClasses);
@@ -158,7 +158,7 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 
 		final NondetModel quotient = model.getTransformed(transform);
 
-		return new MDPQuotient(model, quotient, transform, transformedStatesOfInterest);
+		return new AdaptedMDPQuotient(model, quotient, transform, transformedStatesOfInterest);
 	}
 
 	/** The transformation operator for the MDPQuotient operation. */

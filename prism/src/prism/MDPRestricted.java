@@ -27,57 +27,30 @@
 
 package prism;
 
-import java.util.List;
-
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
 import jdd.SanityJDD;
 
+import java.util.List;
+
 /**
- * Transformation for obtaining the quotient MDP for an MDP, given an
- * equivalence relation.
- * <br>
- * Given a list of equivalent classes (have to be disjoint, but don't need
- * to cover the whole state space), each class is collapsed to a single state,
- * the representative for the class.
- * <br>
- * Transitions from and to a state in an equivalence class are attached
- * to the representative instead.
- * To allow a symbolic treatment, several new non-deterministic choice
- * variables are introduced, yielding action labels of the form (t,s,alpha):
- * <ul>
- * <li>(!tau, 0, alpha) corresponds to an action alpha in the original model (not originating
- *     from a state in an equivalence class)</li>
- * <li>(tau, s, alpha) corresponds to an action alpha that originated from state s in some equivalence class</li>
- * </ul>
- * Self-loop actions on the representative, i.e., actions where the representative is the
- * only successor, are removed in most cases. They are only retained if the representative
- * would become a deadlock state otherwise.
- * <br>
- * Rewards are handled as follows:
- * <ul>
- * <li>State rewards for all states in equivalence classes are set to zero</li>
- * <li>Transition rewards for all state-action pairs where all successors
- *     remain in the equivalence class are set to zero as well (this is visible for the self-loops on
- *     representatives that would be deadlocks otherwise)</li>
- * </ul>
- * <br>
+ * Transformation for obtaining the MEC restricted MDP M, given a set of states and stable transitions
  * Labels attached to the original model are currently effectively stripped,
  * i.e., they are replaced with JDD.ZERO. In the future, more advanced treatment
  * may be added.
  * <br>
  * Note as well that evaluating expressions in the quotient model will not lead to correct results.
  */
-public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
+public class MDPRestricted implements ModelTransformation<NondetModel,NondetModel>
 {
 	private NondetModel originalModel;
 	private NondetModel transformedModel;
-	private MDPQuotientOperator transform;
+	private MDPRestrictOperator transform;
 	private JDDNode transformedStatesOfInterest;
 
 	/** Private constructor */
-	private MDPQuotient(NondetModel originalModel, NondetModel transformedModel, MDPQuotientOperator transform, JDDNode transformedStatesOfInterest)
+	private MDPRestricted(NondetModel originalModel, NondetModel transformedModel, MDPRestrictOperator transform, JDDNode transformedStatesOfInterest)
 	{
 		this.originalModel = originalModel;
 		this.transformedModel = transformedModel;
@@ -129,43 +102,28 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 		return transformedStatesOfInterest;
 	}
 
-	/**
-	 * Compute the quotient MDP, collapsing each maximal end component (MEC) to a single state.
-	 * Only collapses MECs contained in {@code restrict}.
-	 *
-	 * <br>[ REFs: <i>result</i>, DEREFs: restrict ]
-	 */
-	public static MDPQuotient mecQuotient(PrismComponent parent, final NondetModel model, JDDNode restrict, JDDNode statesOfInterest) throws PrismException
-	{
-		ECComputer ec = ECComputer.createECComputer(parent, model);
-		ec.computeMECStates(restrict);
-		JDD.Deref(restrict);
-
-		return transform(parent, model, ec.getMECStates(), statesOfInterest);
-	}
-
 
 	/**
 	 * Compute the quotient MDP for the given list of equivalence classes (the classes have to be disjoint).
 	 *
 	 * <br>[ REFs: <i>result</i>, DEREFs: equivalenceClasses, statesOfInterest ]
 	 */
-	public static MDPQuotient transform(PrismComponent parent, final NondetModel model, List<JDDNode> equivalentClasses, JDDNode statesOfInterest)
+	public static MDPRestricted transform(PrismComponent parent, final NondetModel model, JDDNode mec, JDDNode stableTrans)
 			throws PrismException
 	{
-		final MDPQuotientOperator transform = new MDPQuotientOperator(parent, model, equivalentClasses);
-		final JDDNode transformedStatesOfInterest = transform.mapStateSet(statesOfInterest);
+		final MDPRestrictOperator transform = new MDPRestrictOperator(parent, model,mec, stableTrans);
+		final JDDNode transformedmec = transform.mapStateSet(mec);
 
-		final NondetModel quotient = model.getTransformed(transform);
+		final NondetModel mdprestricted = model.getTransformed(transform);
 
-		return new MDPQuotient(model, quotient, transform, transformedStatesOfInterest);
+		return new MDPRestricted(model, mdprestricted, transform, transformedmec);
 	}
 
 	/** The transformation operator for the MDPQuotient operation. */
-	public static class MDPQuotientOperator extends NondetModelTransformationOperator {
+	public static class MDPRestrictOperator extends NondetModelTransformationOperator {
 		/** the list of equivalence classes */
-		private List<JDDNode> equivalentClasses;
-
+		private JDDNode stableTrans;
+		private JDDNode mec;
 		/**
 		 * A symbolic mapping (0/1-ADD) from states (row vars) to their representative (col vars)
 		 * in the quotient model.<br>
@@ -179,9 +137,7 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 
 		/** State set: states not contained in equivalence classes */
 		private JDDNode notInEC;
-
-		/** State set: representative states for equivalence classes */
-		private JDDNode representatives = JDD.Constant(0);
+		
 
 		/**
 		 * n JDDVars, where n = number of row vars in the original model.
@@ -210,51 +166,19 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 		private boolean verbose = false;
 
 		/** Constructor */
-		public MDPQuotientOperator(PrismComponent parent, NondetModel model, List<JDDNode> equivalentClasses)
+		public MDPRestrictOperator(PrismComponent parent, NondetModel model, JDDNode mec, JDDNode stableTrans)
 		{
 			super(model);
 
-			this.equivalentClasses = equivalentClasses;
+			this.stableTrans = stableTrans;
+			this.mec = mec;
 			this.parent = parent;
 
 			map = JDD.Constant(0);
 			inEC = JDD.Constant(0);
 			stateActionsInsideECs = JDD.Constant(0);
 
-			for (JDDNode ec : equivalentClasses) {
-				// determine representative for the EC
-				JDDNode rep = JDD.RestrictToFirst(ec.copy(), model.getAllDDRowVars());
-				// map = { s in EC } -> representative'
-				map = JDD.Or(map, JDD.And(ec.copy(),
-						JDD.PermuteVariables(rep.copy(),
-								model.getAllDDRowVars(),
-								model.getAllDDColVars())));
-				// remember all states in ECs
-				inEC = JDD.Or(inEC, ec.copy());
-				representatives = JDD.Or(representatives, rep);
-
-				JDDNode ecCol = JDD.PermuteVariables(ec.copy(), model.getAllDDRowVars(), model.getAllDDColVars());
-				JDDNode transFromEC01 = JDD.And(ec.copy(), model.getTrans01().copy());
-				JDDNode selfLoop = JDD.Times(transFromEC01.copy(), ecCol.copy());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), selfLoop.copy(), "selfLoop");
-				JDDNode stateActionWithSelfLoop = JDD.ThereExists(selfLoop, originalModel.getAllDDColVars());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionWithSelfLoop.copy(), "stateActionWithSelfLoop");
-
-				// from the state action pairs with self loop, find those that also go somewhere
-				// else
-				JDDNode stateActionElse = JDD.And(stateActionWithSelfLoop.copy(), transFromEC01.copy());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionElse.copy(), "stateActionElse");
-				stateActionElse = JDD.And(stateActionElse, JDD.Not(ecCol.copy()));
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionElse.copy(), "stateActionElse (2)");
-				stateActionElse = JDD.ThereExists(stateActionElse, originalModel.getAllDDColVars());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionElse.copy(), "stateActionElse (3)");
-				JDDNode stateActionWithOnlySelfLoop = JDD.And(stateActionWithSelfLoop, JDD.Not(stateActionElse));
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionWithOnlySelfLoop.copy(), "stateActionOnlySelfLoop");
-
-				stateActionsInsideECs = JDD.Or(stateActionsInsideECs, stateActionWithOnlySelfLoop);
-
-				JDD.Deref(ecCol, transFromEC01);
-			}
+			JDDNode restricted = JDD.Restrict(mec.copy(), stableTrans);
 
 			// all states not in EC
 			notInEC = JDD.And(model.getReach().copy(),
@@ -269,13 +193,12 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 		@Override
 		public void clear()
 		{
-			for (JDDNode ec : equivalentClasses) {
-				JDD.Deref(ec);
-			}
+
+			JDD.Deref(mec);
+			JDD.Deref(stableTrans);
 			JDD.Deref(map);
 			JDD.Deref(inEC);
 			JDD.Deref(notInEC);
-			JDD.Deref(representatives);
 			JDD.Deref(stateActionsInsideECs);
 			JDD.Deref(ecRemainingSelfLoops);
 			if (newTrans != null) JDD.Deref(newTrans);
@@ -337,94 +260,7 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 		{
 			JDDNode trans = originalModel.getTrans().copy();
 
-			// first run: collapse the target state ECs
 
-			if (verbose) parent.mainLog.println("Collapsing target states");
-			for (JDDNode ec : equivalentClasses) {
-				if (verbose) JDD.PrintMinterms(parent.getLog(), trans.copy(), "trans");
-				JDDNode ecCol = JDD.PermuteVariables(ec.copy(), originalModel.getAllDDRowVars(), originalModel.getAllDDColVars());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), ec.copy(), "EC");
-				if (verbose) JDD.PrintMinterms(parent.getLog(), ecCol.copy(), "EC'");
-
-				JDDNode representative = JDD.RestrictToFirst(ec.copy(), originalModel.getAllDDRowVars());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), representative.copy(), "rep");
-				JDDNode representativeCol = JDD.PermuteVariables(representative.copy(), originalModel.getAllDDRowVars(), originalModel.getAllDDColVars());
-
-				JDDNode transToEC = JDD.Times(trans.copy(), ecCol.copy());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), transToEC.copy(), "transToEC");
-				transToEC = JDD.SumAbstract(transToEC, originalModel.getAllDDColVars());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), transToEC.copy(), "transToEC (2)");
-				transToEC = JDD.Times(transToEC, representativeCol.copy());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), transToEC.copy(), "transToEC (3)");
-
-				trans = JDD.ITE(ecCol, transToEC, trans);
-				if (verbose) JDD.PrintMinterms(parent.getLog(), trans.copy(), "trans''");
-
-				JDD.Deref(representative, representativeCol);
-			}
-
-			if (verbose) JDD.PrintMinterms(parent.getLog(), trans.copy(), "trans (after collapsing target states)");
-
-			newTrans = JDD.Constant(0);
-			if (verbose) parent.mainLog.println("\nCollapsing from states");
-			for (JDDNode ec : equivalentClasses) {
-				if (verbose) JDD.PrintMinterms(parent.getLog(), ec.copy(), "EC");
-
-				JDDNode representative = JDD.RestrictToFirst(ec.copy(), originalModel.getAllDDRowVars());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), representative.copy(), "rep");
-				JDDNode representativeCol = JDD.PermuteVariables(representative.copy(), originalModel.getAllDDRowVars(), originalModel.getAllDDColVars());
-
-				JDDNode transFromEC = JDD.Times(ec.copy(), trans.copy());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), transFromEC.copy(), "transFromEC");
-
-				// shift from states to actFromEC
-				transFromEC = JDD.PermuteVariables(transFromEC, originalModel.getAllDDRowVars(), actFromStates);
-				if (verbose) JDD.PrintMinterms(parent.getLog(), transFromEC.copy(), "transFromEC (2)");
-				transFromEC = JDD.Times(tau(), representative.copy(), transFromEC);
-				if (verbose) JDD.PrintMinterms(parent.getLog(), transFromEC.copy(), "transFromEC (3)");
-
-				// remove self-loop actions back to the EC,
-				// i.e. actions representative,a where all successors go back to
-				// the representative
-				JDDNode transFromEC01 = JDD.GreaterThan(transFromEC.copy(), 0);
-				if (verbose) JDD.PrintMinterms(parent.getLog(), transFromEC01.copy(), "transFromEC01");
-				JDDNode selfLoop = JDD.Times(transFromEC01.copy(), representativeCol.copy());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), selfLoop.copy(), "selfLoop");
-				JDDNode stateActionWithSelfLoop = JDD.ThereExists(selfLoop, originalModel.getAllDDColVars());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionWithSelfLoop.copy(), "stateActionWithSelfLoop");
-
-				// from the state action pairs with self loop, find those that also go somewhere
-				// else
-				JDDNode stateActionElse = JDD.And(stateActionWithSelfLoop.copy(), transFromEC01.copy());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionElse.copy(), "stateActionElse");
-				stateActionElse = JDD.And(stateActionElse, JDD.Not(representativeCol.copy()));
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionElse.copy(), "stateActionElse (2)");
-				stateActionElse = JDD.ThereExists(stateActionElse, originalModel.getAllDDColVars());
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionElse.copy(), "stateActionElse (3)");
-				JDDNode stateActionWithOnlySelfLoop = JDD.And(stateActionWithSelfLoop, JDD.Not(stateActionElse));
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionWithOnlySelfLoop.copy(), "stateActionOnlySelfLoop");
-
-				// find states where removing those actions would lead to deadlocks
-				JDDNode trans01Removed = JDD.Times(transFromEC01, JDD.Not(stateActionWithOnlySelfLoop.copy()));
-				if (verbose) JDD.PrintMinterms(parent.getLog(), trans01Removed.copy(), "trans01Removed");
-				JDDNode notDeadlocked = JDD.ThereExists(trans01Removed, originalModel.getAllDDColVars());
-				notDeadlocked = JDD.ThereExists(notDeadlocked, originalModel.getAllDDNondetVars());
-				notDeadlocked = JDD.ThereExists(notDeadlocked, extraActionVars);
-				if (verbose) JDD.PrintMinterms(parent.getLog(), notDeadlocked.copy(), "notDeadlocked");
-
-				JDDNode stateActionsToRemove = JDD.And(stateActionWithOnlySelfLoop.copy(), notDeadlocked);
-				if (verbose) JDD.PrintMinterms(parent.getLog(), stateActionsToRemove.copy(), "stateActionsToRemove");
-				transFromEC = JDD.Times(transFromEC, JDD.Not(stateActionsToRemove.copy()));
-				if (verbose) JDD.PrintMinterms(parent.getLog(), transFromEC.copy(), "transFromEC");
-
-				JDDNode selfLoopRemaining = JDD.And(stateActionWithOnlySelfLoop, JDD.Not(stateActionsToRemove));
-				ecRemainingSelfLoops = JDD.Or(ecRemainingSelfLoops, selfLoopRemaining);
-
-				newTrans = JDD.Apply(JDD.MAX, newTrans, transFromEC);
-				if (verbose) JDD.PrintMinterms(parent.getLog(), newTrans.copy(), "newTrans");
-
-				JDD.Deref(representative, representativeCol);
-			}
 
 			JDDNode transUntouched = JDD.Times(trans.copy(), notInEC.copy());
 			if (verbose) JDD.PrintMinterms(parent.getLog(), transUntouched.copy(), "transUntouched");
@@ -576,10 +412,10 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 			// reachable states in the quotient MDP:
 			//  remove non-representative states contained in ECs
 			//  from the reachable states in the original model
-			JDDNode removed = JDD.And(inEC.copy(), JDD.Not(representatives.copy()));
-			JDDNode newReach = JDD.And(originalModel.getReach().copy(), JDD.Not(removed));
+			//JDDNode removed = JDD.And(inEC.copy(), JDD.Not(representatives.copy()));
+			//JDDNode newReach = JDD.And(originalModel.getReach().copy(), JDD.Not(removed));
 
-			return newReach;
+			return null; //newReach;
 		}
 
 		/**
