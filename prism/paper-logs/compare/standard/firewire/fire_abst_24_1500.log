@@ -1,0 +1,85 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Wed Mar 30 16:28:44 IRDT 2022
+Hostname: ubuntu
+Memory limits: cudd=1g, java(heap)=910.3m
+Command line: prism ../prism-examples/mdps/firewire/abst/deadline.nm ../prism-examples/mdps/firewire/abst/deadline.pctl -s -const 'delay=24,deadline=1500,fast=.12'
+
+Parsing model file "../prism-examples/mdps/firewire/abst/deadline.nm"...
+
+Type:        MDP
+Modules:     abstract_firewire 
+Variables:   y x s 
+
+Parsing properties file "../prism-examples/mdps/firewire/abst/deadline.pctl"...
+
+1 property:
+(1) Pmin=? [ true U (s=10) ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ true U (s=10) ]
+Model constants: deadline=1500,delay=24,fast=0.12
+
+Building model...
+Model constants: deadline=1500,delay=24,fast=0.12
+
+Computing reachable states...
+
+Reachability (BFS): 1528 iterations in 3.44 seconds (average 0.002254, setup 0.00)
+
+Time for model construction: 46.584 seconds.
+
+Type:        MDP
+States:      971665 (1 initial)
+Transitions: 1567225
+Choices:     1362625
+
+Transition matrix: 10794 nodes (4 terminal), 1567225 minterms, vars: 23r/23c/2nd
+
+Prob0E: 364 iterations in 6.26 seconds (average 0.017198, setup 0.00)
+
+Prob1A: 1166 iterations in 6.86 seconds (average 0.005880, setup 0.00)
+
+yes = 426472, no = 117345, maybe = 427848
+
+Computing remaining probabilities...
+Engine: Sparse
+1
+Building sparse matrix... [n=971665, nc=693270, nnz=870870, k=3] [11.6 MB]
+Creating vector for yes... [7.4 MB]
+Allocating iteration vectors... [2 x 7.4 MB]
+TOTAL: [33.8 MB]
+
+Starting iterations...
+Iteration 21: max relative diff=1.000000, 5.09 sec so far
+Iteration 53: max relative diff=1.000000, 10.30 sec so far
+Iteration 87: max relative diff=1.000000, 15.35 sec so far
+Iteration 139: max relative diff=1.000000, 20.42 sec so far
+Iteration 202: max relative diff=0.607659, 25.47 sec so far
+Iteration 262: max relative diff=0.432916, 30.52 sec so far
+Iteration 324: max relative diff=0.432916, 35.53 sec so far
+Iteration 397: max relative diff=0.318099, 40.54 sec so far
+Iteration 471: max relative diff=0.248732, 45.58 sec so far
+Iteration 538: max relative diff=0.248732, 50.63 sec so far
+Iteration 607: max relative diff=0.196192, 55.68 sec so far
+Iteration 669: max relative diff=0.160039, 60.77 sec so far
+Iteration 738: max relative diff=0.160039, 65.79 sec so far
+Iteration 824: max relative diff=0.109346, 70.82 sec so far
+Iteration 918: max relative diff=0.109346, 75.85 sec so far
+Iteration 1008: max relative diff=0.077483, 80.93 sec so far
+Iteration 1088: max relative diff=0.077483, 86.02 sec so far
+Iteration 1166: max relative diff=0.065684, 91.06 sec so far
+Iteration 1237: max relative diff=0.056234, 96.11 sec so far
+Iteration 1310: max relative diff=0.000031, 101.18 sec so far
+
+Iterative method: 1333 iterations in 103.58 seconds (average 0.076963, setup 0.99)
+
+Value in the initial state: 0.8148592653834563
+
+Time for model checking: 119.968 seconds.
+
+Result: 0.8148592653834563 (value in the initial state)
+

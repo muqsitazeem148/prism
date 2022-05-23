@@ -1,0 +1,66 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Sun May 01 15:55:14 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/zeroconf/zeroconf.nm ../prism-examples/mdps/zeroconf/zeroconf.pctl -prop 1 -const 'N=1500,K=18,reset=false,err=.1' -s -noprob1 -mod4
+
+Parsing model file "../prism-examples/mdps/zeroconf/zeroconf.nm"...
+
+Type:        MDP
+Modules:     environment host0 
+Variables:   b_ip7 b_ip6 b_ip5 b_ip4 b_ip3 b_ip2 b_ip1 b_ip0 n n0 n1 b z ip_mess x y coll probes mess defend ip l 
+
+Parsing properties file "../prism-examples/mdps/zeroconf/zeroconf.pctl"...
+
+4 properties:
+(1) Pmin=? [ true U (l=4&ip=1) ]
+(2) Pmax=? [ true U (l=4&ip=1) ]
+(3) Rmin=? [ F l=4 ]
+(4) Rmax=? [ F l=4 ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ true U (l=4&ip=1) ]
+Model constants: reset=false,N=1500,K=18,err=0.1
+
+Building model...
+Model constants: reset=false,N=1500,K=18,err=0.1
+
+Computing reachable states...
+
+Reachability (BFS): 1103 iterations in 226.33 seconds (average 0.205197, setup 0.00)
+
+Time for model construction: 227.973 seconds.
+
+Type:        MDP
+States:      5477150 (1 initial)
+Transitions: 12374708
+Choices:     10095684
+
+Transition matrix: 307471 nodes (6 terminal), 12374708 minterms, vars: 59r/59c/7nd
+
+Prob0E: 174 iterations in 10.46 seconds (average 0.060138, setup 0.00)
+
+yes = 13142, no = 1240173, maybe = 4223835
+
+Computing remaining probabilities...
+Engine: Sparse
+
+Building sparse matrix... [n=5477150, nc=7865808, nnz=9655262, k=4] [123.2 MB]
+Creating vector for yes... [41.8 MB]
+Allocating iteration vectors... [2 x 41.8 MB]
+TOTAL: [248.6 MB]
+
+Starting iterations...
+Number of approximated usefull states: 8533 
+Iterative method: 863 iterations in 6.05 seconds (average 0.000594, setup 5.54)
+
+Value in the initial state: 4.671666588203628E-16
+
+Time for model checking: 16.64 seconds.
+
+Result: 4.671666588203628E-16 (value in the initial state)
+

@@ -1,0 +1,68 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Thu Apr 28 19:35:09 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/firewire/abst/deadline.nm ../prism-examples/mdps/firewire/abst/deadline.pctl -s -const 'delay=24,deadline=2000,fast=.1'
+
+Parsing model file "../prism-examples/mdps/firewire/abst/deadline.nm"...
+
+Type:        MDP
+Modules:     abstract_firewire 
+Variables:   y x s 
+
+Parsing properties file "../prism-examples/mdps/firewire/abst/deadline.pctl"...
+
+1 property:
+(1) Pmin=? [ true U (s=10) ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ true U (s=10) ]
+Model constants: deadline=2000,delay=24,fast=0.1
+
+Building model...
+Model constants: deadline=2000,delay=24,fast=0.1
+
+Computing reachable states...
+
+Reachability (BFS): 2037 iterations in 1.33 seconds (average 0.000652, setup 0.00)
+
+Time for model construction: 20.021 seconds.
+
+Type:        MDP
+States:      1329665 (1 initial)
+Transitions: 2146725
+Choices:     1867125
+
+Transition matrix: 10798 nodes (4 terminal), 2146725 minterms, vars: 23r/23c/2nd
+
+Prob0E: 364 iterations in 1.83 seconds (average 0.005030, setup 0.00)
+
+Prob1A: 1674 iterations in 2.10 seconds (average 0.001257, setup 0.00)
+
+yes = 594972, no = 117345, maybe = 617348
+
+Computing remaining probabilities...
+Engine: Sparse
+1
+Building sparse matrix... [n=1329665, nc=997270, nnz=1249870, k=3] [16.5 MB]
+Creating vector for yes... [10.1 MB]
+Allocating iteration vectors... [2 x 10.1 MB]
+TOTAL: [47.0 MB]
+
+Starting iterations...
+Iteration 539: max relative diff=0.263240, 5.00 sec so far
+Iteration 1079: max relative diff=0.090176, 10.00 sec so far
+Iteration 1620: max relative diff=0.040071, 15.01 sec so far
+
+Iterative method: 1859 iterations in 17.55 seconds (average 0.009268, setup 0.33)
+
+Value in the initial state: 0.8627072513094494
+
+Time for model checking: 21.528 seconds.
+
+Result: 0.8627072513094494 (value in the initial state)
+

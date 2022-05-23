@@ -28,7 +28,6 @@ package parser.ast;
 
 import param.BigRational;
 import parser.*;
-import parser.type.TypeBool;
 import parser.visitor.*;
 import prism.PrismLangException;
 
@@ -99,10 +98,7 @@ public class ExpressionITE extends Expression
 	@Override
 	public Object evaluate(EvaluateContext ec) throws PrismLangException
 	{
-		Object eval1 = operand1.evaluate(ec);
-		Object eval2 = operand2.evaluate(ec);
-		Object eval3 = operand3.evaluate(ec);
-		return apply(eval1, eval2, eval3);
+		return operand1.evaluateBoolean(ec) ? operand2.evaluate(ec) : operand3.evaluate(ec);
 	}
 
 	@Override
@@ -111,15 +107,6 @@ public class ExpressionITE extends Expression
 		return operand1.evaluateExact(ec).toBoolean() ? operand2.evaluateExact(ec) : operand3.evaluateExact(ec);
 	}
 
-	/**
-	 * Apply this ITE operator instance to the arguments provided
-	 */
-	public Object apply(Object eval1, Object eval2, Object eval3) throws PrismLangException
-	{
-		boolean b = TypeBool.getInstance().castValueTo(eval1);
-		return getType().castValueTo(b ? eval2 : eval3);
-	}
-	
 	@Override
 	public boolean returnsSingleValue()
 	{

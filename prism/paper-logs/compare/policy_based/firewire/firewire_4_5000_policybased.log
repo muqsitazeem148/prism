@@ -1,0 +1,70 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Sun May 22 15:39:34 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/firewire/abst/deadline.nm ../prism-examples/mdps/firewire/abst/deadline.pctl -s -const 'delay=4,deadline=5000,fast=.1' -noprob1 -mod4
+
+Parsing model file "../prism-examples/mdps/firewire/abst/deadline.nm"...
+
+Type:        MDP
+Modules:     abstract_firewire 
+Variables:   y x s 
+
+Parsing properties file "../prism-examples/mdps/firewire/abst/deadline.pctl"...
+
+1 property:
+(1) Pmin=? [ true U (s=10) ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ true U (s=10) ]
+Model constants: deadline=5000,delay=4,fast=0.1
+
+Building model...
+Model constants: deadline=5000,delay=4,fast=0.1
+
+Computing reachable states...
+
+Reachability (BFS): 5094 iterations in 5.75 seconds (average 0.001129, setup 0.00)
+
+Time for model construction: 139.249 seconds.
+
+Type:        MDP
+States:      2892548 (1 initial)
+Transitions: 3468897
+Choices:     3326547
+
+Transition matrix: 11830 nodes (4 terminal), 3468897 minterms, vars: 25r/25c/2nd
+
+Prob0E: 344 iterations in 2.81 seconds (average 0.008169, setup 0.00)
+
+yes = 1, no = 94015, maybe = 2798532
+
+Computing remaining probabilities...
+Engine: Sparse
+
+Building sparse matrix... [n=2892548, nc=3220273, nnz=3357523, k=3] [44.3 MB]
+Creating vector for yes... [22.1 MB]
+Allocating iteration vectors... [2 x 22.1 MB]
+TOTAL: [110.5 MB]
+
+Starting iterations...
+Number of approximated usefull states: 471535 Iteration 619: max relative diff=0.795295, 5.01 sec so far
+Iteration 1283: max relative diff=0.235553, 10.01 sec so far
+Iteration 1935: max relative diff=0.088166, 15.02 sec so far
+Iteration 2603: max relative diff=0.037379, 20.02 sec so far
+Iteration 3269: max relative diff=0.018587, 25.02 sec so far
+Iteration 3935: max relative diff=0.006403, 30.02 sec so far
+Iteration 4602: max relative diff=0.002746, 35.02 sec so far
+
+Iterative method: 4777 iterations in 37.06 seconds (average 0.007606, setup 0.73)
+
+Value in the initial state: 0.9968612506801104
+
+Time for model checking: 39.976 seconds.
+
+Result: 0.9968612506801104 (value in the initial state)
+

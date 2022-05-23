@@ -41,12 +41,10 @@ public class TypeClock extends Type
 	{		
 	}	
 	
-	public static TypeClock getInstance()
+	public boolean equals(Object o)
 	{
-		return singleton;
+		return (o instanceof TypeClock);
 	}
-	
-	// Methods required for Type:
 	
 	@Override
 	public String getTypeString()
@@ -55,15 +53,14 @@ public class TypeClock extends Type
 	}
 	
 	@Override
-	public boolean isPrimitive()
-	{
-		return true;
-	}
-	
-	@Override
 	public Object defaultValue()
 	{
-		return 0;
+		return new Double(0.0);
+	}
+	
+	public static TypeClock getInstance()
+	{
+		return singleton;
 	}
 	
 	@Override
@@ -78,15 +75,8 @@ public class TypeClock extends Type
 		if (value instanceof Double)
 			return (Double) value;
 		if (value instanceof Integer)
-			return ((Double) value).doubleValue();
+			return new Double(((Double) value).doubleValue());
 		else
 			throw new PrismLangException("Can't convert " + value.getClass() + " to type " + getTypeString());
-	}
-
-	// Standard methods:
-	
-	public boolean equals(Object o)
-	{
-		return (o instanceof TypeClock);
 	}
 }

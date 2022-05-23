@@ -1,0 +1,70 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Sun May 01 15:22:14 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/zeroconf/zeroconf.nm ../prism-examples/mdps/zeroconf/zeroconf.pctl -prop 1 -const 'N=1500,K=10,reset=false,err=.1' -s
+
+Parsing model file "../prism-examples/mdps/zeroconf/zeroconf.nm"...
+
+Type:        MDP
+Modules:     environment host0 
+Variables:   b_ip7 b_ip6 b_ip5 b_ip4 b_ip3 b_ip2 b_ip1 b_ip0 n n0 n1 b z ip_mess x y coll probes mess defend ip l 
+
+Parsing properties file "../prism-examples/mdps/zeroconf/zeroconf.pctl"...
+
+4 properties:
+(1) Pmin=? [ true U (l=4&ip=1) ]
+(2) Pmax=? [ true U (l=4&ip=1) ]
+(3) Rmin=? [ F l=4 ]
+(4) Rmax=? [ F l=4 ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ true U (l=4&ip=1) ]
+Model constants: reset=false,N=1500,K=10,err=0.1
+
+Building model...
+Model constants: reset=false,N=1500,K=10,err=0.1
+
+Computing reachable states...
+
+Reachability (BFS): 664 iterations in 91.54 seconds (average 0.137857, setup 0.00)
+
+Time for model construction: 92.283 seconds.
+
+Type:        MDP
+States:      3001911 (1 initial)
+Transitions: 6787615
+Choices:     5520579
+
+Transition matrix: 163445 nodes (6 terminal), 6787615 minterms, vars: 58r/58c/7nd
+
+Prob0E: 142 iterations in 5.37 seconds (average 0.037803, setup 0.00)
+
+Prob1A: 92 iterations in 3.00 seconds (average 0.032609, setup 0.00)
+
+yes = 19227, no = 957807, maybe = 2024877
+
+Computing remaining probabilities...
+Engine: Sparse
+1
+Building sparse matrix... [n=3001911, nc=3771728, nnz=4651972, k=4] [59.7 MB]
+Creating vector for yes... [22.9 MB]
+Allocating iteration vectors... [2 x 22.9 MB]
+TOTAL: [128.4 MB]
+
+Starting iterations...
+Iteration 156: max relative diff=0.762033, 5.02 sec so far
+Iteration 306: max relative diff=0.000040, 10.04 sec so far
+
+Iterative method: 378 iterations in 15.34 seconds (average 0.032995, setup 2.87)
+
+Value in the initial state: 2.750698764234998E-10
+
+Time for model checking: 23.801 seconds.
+
+Result: 2.750698764234998E-10 (value in the initial state)
+

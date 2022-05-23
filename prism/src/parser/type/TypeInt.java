@@ -42,12 +42,10 @@ public class TypeInt extends Type
 	{		
 	}
 	
-	public static TypeInt getInstance()
+	public boolean equals(Object o)
 	{
-		return singleton;
+		return (o instanceof TypeInt);
 	}
-	
-	// Methods required for Type:
 	
 	@Override
 	public String getTypeString()
@@ -56,15 +54,14 @@ public class TypeInt extends Type
 	}
 	
 	@Override
-	public boolean isPrimitive()
-	{
-		return true;
-	}
-	
-	@Override
 	public Object defaultValue()
 	{
-		return 0;
+		return new Integer(0);
+	}
+	
+	public static TypeInt getInstance()
+	{
+		return singleton;
 	}
 	
 	@Override
@@ -88,10 +85,4 @@ public class TypeInt extends Type
 		return value.toInt();
 	}
 
-	// Standard methods:
-	
-	public boolean equals(Object o)
-	{
-		return (o instanceof TypeInt);
-	}
 }

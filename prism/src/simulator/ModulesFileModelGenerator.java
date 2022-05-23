@@ -6,7 +6,6 @@ import java.util.List;
 import parser.State;
 import parser.Values;
 import parser.VarList;
-import parser.ast.DeclarationType;
 import parser.ast.Expression;
 import parser.ast.LabelList;
 import parser.ast.ModulesFile;
@@ -65,9 +64,9 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 	{
 		this.parent = parent;
 		
-		// No support for real-time models yet
-		if (modulesFile.getModelType().realTime()) {
-			throw new PrismException(modulesFile.getModelType() + "s are not currently supported");
+		// No support for PTAs yet
+		if (modulesFile.getModelType() == ModelType.PTA) {
+			throw new PrismException("PTAs are not currently supported");
 		}
 		// No support for system...endsystem yet
 		if (modulesFile.getSystemDefn() != null) {
@@ -91,7 +90,7 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 	 * (Re-)Initialise the class ready for model exploration
 	 * (can only be done once any constants needed have been provided)
 	 */
-	private void initialise() throws PrismException
+	private void initialise() throws PrismLangException
 	{
 		// Evaluate constants on (a copy) of the modules file, insert constant values and optimize arithmetic expressions
 		modulesFile = (ModulesFile) modulesFile.deepCopy().replaceConstants(mfConstants).simplify();
@@ -167,36 +166,6 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 	}
 
 	@Override
-	public DeclarationType getVarDeclarationType(int i) throws PrismException
-	{
-		return modulesFile.getVarDeclarationType(i);
-	}
-	
-	@Override
-	public int getVarModuleIndex(int i)
-	{
-		return modulesFile.getVarModuleIndex(i);
-	}
-	
-	@Override
-	public String getModuleName(int i)
-	{
-		return modulesFile.getModuleName(i);
-	}
-	
-	@Override
-	public VarList createVarList() throws PrismException
-	{
-		return varList;
-	}
-	
-	@Override
-	public boolean isVarObservable(int i)
-	{
-		return modulesFile.isVarObservable(i);
-	}
-	
-	@Override
 	public int getNumLabels()
 	{
 		return labelList.size();	
@@ -227,9 +196,9 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 	}
 	
 	@Override
-	public List<String> getObservableNames()
+	public VarList createVarList()
 	{
-		return modulesFile.getObservableNames();
+		return varList;
 	}
 	
 	// Methods for ModelGenerator interface
@@ -415,21 +384,6 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 		return expr.evaluateBoolean(exploreState);
 	}
 	
-	@Override
-	public State getObservation(State state) throws PrismException
-	{
-		if (!modelType.partiallyObservable()) {
-			return null;
-		}
-		int numObservables = getNumObservables();
-		State sObs = new State(numObservables);
-		for (int i = 0; i < numObservables; i++) {
-			Object oObs = modulesFile.getObservable(i).getDefinition().evaluate(modulesFile.getConstantValues(), state);
-			sObs.setValue(i, oObs);
-		}
-		return sObs;
-	}
-	
 	// Methods for RewardGenerator interface
 
 	@Override
@@ -461,15 +415,8 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 				Expression guard = rewStr.getStates(i);
 				if (guard.evaluateBoolean(modulesFile.getConstantValues(), state)) {
 					double rew = rewStr.getReward(i).evaluateDouble(modulesFile.getConstantValues(), state);
-					// Check reward is finite/non-negative (would be checked at model construction time,
-					// but more fine grained error reporting can be done here)
-					// Note use of original model since modulesFile may have been simplified
-					if (!Double.isFinite(rew)) {
-						throw new PrismLangException("Reward structure is not finite at state " + state, originalModulesFile.getRewardStruct(r).getReward(i));
-					}
-					if (rew < 0) {
-						throw new PrismLangException("Reward structure is negative + (" + rew + ") at state " + state, originalModulesFile.getRewardStruct(r).getReward(i));
-					}
+					if (Double.isNaN(rew))
+						throw new PrismLangException("Reward structure evaluates to NaN at state " + state, rewStr.getReward(i));
 					d += rew;
 				}
 			}
@@ -490,15 +437,8 @@ public class ModulesFileModelGenerator implements ModelGenerator, RewardGenerato
 				if (action == null ? (cmdAction.isEmpty()) : action.equals(cmdAction)) {
 					if (guard.evaluateBoolean(modulesFile.getConstantValues(), state)) {
 						double rew = rewStr.getReward(i).evaluateDouble(modulesFile.getConstantValues(), state);
-						// Check reward is finite/non-negative (would be checked at model construction time,
-						// but more fine grained error reporting can be done here)
-						// Note use of original model since modulesFile may have been simplified
-						if (!Double.isFinite(rew)) {
-							throw new PrismLangException("Reward structure is not finite at state " + state, originalModulesFile.getRewardStruct(r).getReward(i));
-						}
-						if (rew < 0) {
-							throw new PrismLangException("Reward structure is negative + (" + rew + ") at state " + state, originalModulesFile.getRewardStruct(r).getReward(i));
-						}
+						if (Double.isNaN(rew))
+							throw new PrismLangException("Reward structure evaluates to NaN at state " + state, rewStr.getReward(i));
 						d += rew;
 					}
 				}

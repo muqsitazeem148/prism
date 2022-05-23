@@ -1,0 +1,70 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Mon May 23 17:35:37 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/consensus/coin4.nm ../prism-examples/mdps/consensus/coin.pctl -noprob1 -maxiters 9000500 -s -prop 3 -const K=10 -mod3
+
+Parsing model file "../prism-examples/mdps/consensus/coin4.nm"...
+
+Type:        MDP
+Modules:     process1 process2 process3 process4 
+Variables:   counter pc1 coin1 pc2 coin2 pc3 coin3 pc4 coin4 
+
+Parsing properties file "../prism-examples/mdps/consensus/coin.pctl"...
+
+8 properties:
+(1) P>=1 [ F "finished" ]
+(2) Pmin=? [ F "finished"&"all_coins_equal_0" ]
+(3) Pmin=? [ F "finished"&"all_coins_equal_1" ]
+(4) Pmax=? [ F "finished"&!"agree" ]
+(5) Pmin=? [ F<=k "finished" ]
+(6) Pmax=? [ F<=k "finished" ]
+(7) R{"steps"}min=? [ F "finished" ]
+(8) R{"steps"}max=? [ F "finished" ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ F "finished"&"all_coins_equal_1" ]
+Model constants: K=10
+
+Building model...
+Model constants: K=10
+
+Computing reachable states...
+
+Reachability (BFS): 483 iterations in 0.05 seconds (average 0.000110, setup 0.00)
+
+Time for model construction: 0.105 seconds.
+
+Type:        MDP
+States:      104576 (1 initial)
+Transitions: 351712
+Choices:     281728
+
+Transition matrix: 2384 nodes (3 terminal), 351712 minterms, vars: 19r/19c/4nd
+
+Prob0E: 255 iterations in 0.12 seconds (average 0.000451, setup 0.00)
+
+yes = 4, no = 54780, maybe = 49792
+
+Computing remaining probabilities...
+Engine: Sparse
+
+Building sparse matrix... [n=104576, nc=159200, nnz=199000, k=4] [2.5 MB]
+Creating vector for yes... [817.0 KB]
+Allocating iteration vectors... [2 x 817.0 KB]
+TOTAL: [4.9 MB]
+
+Starting iterations...
+
+Iterative method: 15627 iterations in 1.61 seconds (average 0.000101, setup 0.03)
+
+Value in the initial state: 0.5337493356282974
+
+Time for model checking: 1.748 seconds.
+
+Result: 0.5337493356282974 (value in the initial state)
+

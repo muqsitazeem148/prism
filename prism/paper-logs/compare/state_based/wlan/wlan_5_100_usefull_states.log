@@ -1,0 +1,72 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Mon May 02 22:04:00 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/wlan/wlan5.nm ../prism-examples/mdps/wlan/wlan.pctl -s -prop 2 -noprob1 -const 'k=5,TRANS_TIME_MAX=100' -mod3
+
+Parsing model file "../prism-examples/mdps/wlan/wlan5.nm"...
+
+Type:        MDP
+Modules:     medium station1 station2 
+Variables:   c1 c2 x1 s1 slot1 backoff1 bc1 x2 s2 slot2 backoff2 bc2 
+
+Parsing properties file "../prism-examples/mdps/wlan/wlan.pctl"...
+
+9 properties:
+(1) P>=1 [ true U s1=12&s2=12 ]
+(2) Pmax=? [ true U bc1=k|bc2=k ]
+(3) R{"collisions"}max=? [ F s1=12&s2=12 ]
+(4) R{"time"}max=? [ F s1=12&s2=12 ]
+(5) R{"time"}max=? [ F s1=12|s2=12 ]
+(6) R{"time"}max=? [ F s1=12 ]
+(7) R{"cost"}max=? [ F s1=12&s2=12 ]
+(8) R{"cost"}max=? [ F s1=12|s2=12 ]
+(9) R{"cost"}max=? [ F s1=12 ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ true U bc1=k|bc2=k ]
+Model constants: TRANS_TIME_MAX=100
+Property constants: k=5
+
+Building model...
+Model constants: TRANS_TIME_MAX=100
+
+Computing reachable states...
+
+Reachability (BFS): 256 iterations in 1.18 seconds (average 0.004605, setup 0.00)
+
+Time for model construction: 1.363 seconds.
+
+Type:        MDP
+States:      1436518 (1 initial)
+Transitions: 3214180
+Choices:     1930294
+
+Transition matrix: 40181 nodes (7 terminal), 3214180 minterms, vars: 50r/50c/7nd
+
+Prob0A: 399 iterations in 3.24 seconds (average 0.008128, setup 0.00)
+
+yes = 1270292, no = 150767, maybe = 15459
+
+Computing remaining probabilities...
+Engine: Sparse
+
+Building sparse matrix... [n=1436518, nc=23617, nnz=51831, k=3] [2.0 MB]
+Creating vector for yes... [11.0 MB]
+Allocating iteration vectors... [2 x 11.0 MB]
+TOTAL: [34.9 MB]
+
+Starting iterations...
+
+Iterative method: 317 iterations in 0.57 seconds (average 0.001256, setup 0.17)
+
+Value in the initial state: 1.8566655967333645E-5
+
+Time for model checking: 3.899 seconds.
+
+Result: 1.8566655967333645E-5 (value in the initial state)
+

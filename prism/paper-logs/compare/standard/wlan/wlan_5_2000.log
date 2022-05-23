@@ -1,0 +1,75 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Sat May 07 15:05:05 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/wlan/wlan5.nm ../prism-examples/mdps/wlan/wlan.pctl -s -prop 2 -noprob1 -const 'k=5,TRANS_TIME_MAX=2000'
+
+Parsing model file "../prism-examples/mdps/wlan/wlan5.nm"...
+
+Type:        MDP
+Modules:     medium station1 station2 
+Variables:   c1 c2 x1 s1 slot1 backoff1 bc1 x2 s2 slot2 backoff2 bc2 
+
+Parsing properties file "../prism-examples/mdps/wlan/wlan.pctl"...
+
+9 properties:
+(1) P>=1 [ true U s1=12&s2=12 ]
+(2) Pmax=? [ true U bc1=k|bc2=k ]
+(3) R{"collisions"}max=? [ F s1=12&s2=12 ]
+(4) R{"time"}max=? [ F s1=12&s2=12 ]
+(5) R{"time"}max=? [ F s1=12|s2=12 ]
+(6) R{"time"}max=? [ F s1=12 ]
+(7) R{"cost"}max=? [ F s1=12&s2=12 ]
+(8) R{"cost"}max=? [ F s1=12|s2=12 ]
+(9) R{"cost"}max=? [ F s1=12 ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ true U bc1=k|bc2=k ]
+Model constants: TRANS_TIME_MAX=2000
+Property constants: k=5
+
+Building model...
+Model constants: TRANS_TIME_MAX=2000
+
+Computing reachable states...
+
+Reachability (BFS): 2156 iterations in 73.45 seconds (average 0.034070, setup 0.00)
+
+Time for model construction: 86.832 seconds.
+
+Type:        MDP
+States:      4419518 (1 initial)
+Transitions: 9214380
+Choices:     7930494
+
+Transition matrix: 435923 nodes (7 terminal), 9214380 minterms, vars: 58r/58c/7nd
+
+Prob0A: 399 iterations in 24.17 seconds (average 0.060586, setup 0.00)
+
+yes = 3240592, no = 1096967, maybe = 81959
+
+Computing remaining probabilities...
+Engine: Sparse
+1
+Building sparse matrix... [n=4419518, nc=185117, nnz=213331, k=3] [6.8 MB]
+Creating vector for yes... [33.7 MB]
+Allocating iteration vectors... [2 x 33.7 MB]
+TOTAL: [108.0 MB]
+
+Starting iterations...
+Iteration 201: max relative diff=1.000000, 5.01 sec so far
+Iteration 415: max relative diff=0.010582, 10.03 sec so far
+Iteration 637: max relative diff=0.002318, 15.04 sec so far
+
+Iterative method: 816 iterations in 20.70 seconds (average 0.023314, setup 1.68)
+
+Value in the initial state: 1.8566606684089493E-5
+
+Time for model checking: 45.141 seconds.
+
+Result: 1.8566606684089493E-5 (value in the initial state)
+

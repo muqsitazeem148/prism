@@ -1,0 +1,68 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Sun May 01 15:16:08 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/zeroconf/zeroconf.nm ../prism-examples/mdps/zeroconf/zeroconf.pctl -prop 1 -const 'N=1500,K=6,reset=false,err=.1' -s
+
+Parsing model file "../prism-examples/mdps/zeroconf/zeroconf.nm"...
+
+Type:        MDP
+Modules:     environment host0 
+Variables:   b_ip7 b_ip6 b_ip5 b_ip4 b_ip3 b_ip2 b_ip1 b_ip0 n n0 n1 b z ip_mess x y coll probes mess defend ip l 
+
+Parsing properties file "../prism-examples/mdps/zeroconf/zeroconf.pctl"...
+
+4 properties:
+(1) Pmin=? [ true U (l=4&ip=1) ]
+(2) Pmax=? [ true U (l=4&ip=1) ]
+(3) Rmin=? [ F l=4 ]
+(4) Rmax=? [ F l=4 ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ true U (l=4&ip=1) ]
+Model constants: reset=false,N=1500,K=6,err=0.1
+
+Building model...
+Model constants: reset=false,N=1500,K=6,err=0.1
+
+Computing reachable states...
+
+Reachability (BFS): 449 iterations in 25.84 seconds (average 0.057543, setup 0.00)
+
+Time for model construction: 26.373 seconds.
+
+Type:        MDP
+States:      798471 (1 initial)
+Transitions: 1833673
+Choices:     1478204
+
+Transition matrix: 97507 nodes (6 terminal), 1833673 minterms, vars: 57r/57c/7nd
+
+Prob0E: 123 iterations in 2.22 seconds (average 0.018033, setup 0.00)
+
+Prob1A: 89 iterations in 1.02 seconds (average 0.011416, setup 0.00)
+
+yes = 12339, no = 236035, maybe = 550097
+
+Computing remaining probabilities...
+Engine: Sparse
+1
+Building sparse matrix... [n=798471, nc=1032903, nnz=1288094, k=4] [16.5 MB]
+Creating vector for yes... [6.1 MB]
+Allocating iteration vectors... [2 x 6.1 MB]
+TOTAL: [34.8 MB]
+
+Starting iterations...
+
+Iterative method: 332 iterations in 4.06 seconds (average 0.009488, setup 0.91)
+
+Value in the initial state: 2.1107098505988554E-7
+
+Time for model checking: 7.35 seconds.
+
+Result: 2.1107098505988554E-7 (value in the initial state)
+

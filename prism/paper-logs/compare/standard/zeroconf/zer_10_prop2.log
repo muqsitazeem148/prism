@@ -1,0 +1,69 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Sun May 01 15:27:45 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/zeroconf/zeroconf.nm ../prism-examples/mdps/zeroconf/zeroconf.pctl -prop 2 -const 'N=1500,K=10,reset=false,err=.1' -s
+
+Parsing model file "../prism-examples/mdps/zeroconf/zeroconf.nm"...
+
+Type:        MDP
+Modules:     environment host0 
+Variables:   b_ip7 b_ip6 b_ip5 b_ip4 b_ip3 b_ip2 b_ip1 b_ip0 n n0 n1 b z ip_mess x y coll probes mess defend ip l 
+
+Parsing properties file "../prism-examples/mdps/zeroconf/zeroconf.pctl"...
+
+4 properties:
+(1) Pmin=? [ true U (l=4&ip=1) ]
+(2) Pmax=? [ true U (l=4&ip=1) ]
+(3) Rmin=? [ F l=4 ]
+(4) Rmax=? [ F l=4 ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ true U (l=4&ip=1) ]
+Model constants: reset=false,N=1500,K=10,err=0.1
+
+Building model...
+Model constants: reset=false,N=1500,K=10,err=0.1
+
+Computing reachable states...
+
+Reachability (BFS): 664 iterations in 96.97 seconds (average 0.146044, setup 0.00)
+
+Time for model construction: 97.814 seconds.
+
+Type:        MDP
+States:      3001911 (1 initial)
+Transitions: 6787615
+Choices:     5520579
+
+Transition matrix: 163445 nodes (6 terminal), 6787615 minterms, vars: 58r/58c/7nd
+
+Prob0A: 140 iterations in 4.53 seconds (average 0.032343, setup 0.00)
+
+Prob1E: 2357 iterations in 92.93 seconds (average 0.039427, setup 0.00)
+
+yes = 197004, no = 957807, maybe = 1847100
+
+Computing remaining probabilities...
+Engine: Sparse
+1
+Building sparse matrix... [n=3001911, nc=3403823, nnz=4212607, k=4] [54.3 MB]
+Creating vector for yes... [22.9 MB]
+Allocating iteration vectors... [2 x 22.9 MB]
+TOTAL: [123.0 MB]
+
+Starting iterations...
+Iteration 165: max relative diff=0.889571, 5.01 sec so far
+
+Iterative method: 326 iterations in 12.46 seconds (average 0.030411, setup 2.55)
+
+Value in the initial state: 2.6204168272398212E-9
+
+Time for model checking: 110.167 seconds.
+
+Result: 2.6204168272398212E-9 (value in the initial state)
+

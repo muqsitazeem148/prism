@@ -28,25 +28,13 @@ package parser.ast;
 
 import jltl2ba.SimpleLTL;
 import param.BigRational;
-import parser.BooleanUtils;
-import parser.EvaluateContext;
-import parser.EvaluateContextConstants;
-import parser.EvaluateContextState;
-import parser.EvaluateContextSubstate;
-import parser.EvaluateContextValues;
-import parser.State;
-import parser.Values;
-import parser.type.TypeBool;
-import parser.type.TypeDouble;
-import parser.type.TypeInt;
-import parser.type.TypePathBool;
-import parser.visitor.ASTTraverse;
-import parser.visitor.CheckValid;
-import parser.visitor.ConvertForJltl2ba;
-import parser.visitor.ExpressionTraverseNonNested;
+import parser.*;
+import parser.ast.ExpressionFilter.FilterOperator;
+import parser.visitor.*;
 import prism.ModelType;
 import prism.PrismException;
 import prism.PrismLangException;
+import parser.type.*;
 
 // Abstract class for PRISM language expressions
 
@@ -188,7 +176,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public Object evaluate() throws PrismLangException
 	{
-		return evaluate(new EvaluateContextConstants(null));
+		return evaluate(new EvaluateContextValues(null, null));
 	}
 
 	/**
@@ -198,7 +186,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public Object evaluate(Values constantValues) throws PrismLangException
 	{
-		return evaluate(new EvaluateContextConstants(constantValues));
+		return evaluate(new EvaluateContextValues(constantValues, null));
 	}
 
 	/**
@@ -263,7 +251,14 @@ public abstract class Expression extends ASTElement
 	 */
 	public int evaluateInt(EvaluateContext ec) throws PrismLangException
 	{
-		return evaluateObjectAsInt(evaluate(ec));
+		Object o = evaluate(ec);
+		if (o instanceof Integer) {
+			return ((Integer) o).intValue();
+		}
+		if (o instanceof Boolean) {
+			return ((Boolean) o).booleanValue() ? 1 : 0;
+		}
+		throw new PrismLangException("Cannot evaluate to an integer", this);
 	}
 
 	/**
@@ -273,7 +268,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public int evaluateInt() throws PrismLangException
 	{
-		return evaluateInt(new EvaluateContextConstants(null));
+		return evaluateInt(new EvaluateContextValues(null, null));
 	}
 
 	/**
@@ -284,7 +279,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public int evaluateInt(Values constantValues) throws PrismLangException
 	{
-		return evaluateInt(new EvaluateContextConstants(constantValues));
+		return evaluateInt(new EvaluateContextValues(constantValues, null));
 	}
 
 	/**
@@ -349,21 +344,6 @@ public abstract class Expression extends ASTElement
 	}
 
 	/**
-	 * Evaluate this object as an integer.
-	 * Any typing issues cause an exception (but: we do allow conversion of boolean to 0/1).
-	 */
-	public static int evaluateObjectAsInt(Object o) throws PrismLangException
-	{
-		if (o instanceof Integer) {
-			return ((Integer) o).intValue();
-		}
-		if (o instanceof Boolean) {
-			return ((Boolean) o).booleanValue() ? 1 : 0;
-		}
-		throw new PrismLangException("Cannot evaluate " + o + " to an integer");
-	}
-
-	/**
 	 * Evaluate this expression as a double.
 	 * Any typing issues cause an exception (but: we do allow conversion of boolean to 0.0/1.0).
 	 */
@@ -392,7 +372,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public double evaluateDouble() throws PrismLangException
 	{
-		return evaluateDouble(new EvaluateContextConstants(null));
+		return evaluateDouble(new EvaluateContextValues(null, null));
 	}
 
 	/**
@@ -403,7 +383,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public double evaluateDouble(Values constantValues) throws PrismLangException
 	{
-		return evaluateDouble(new EvaluateContextConstants(constantValues));
+		return evaluateDouble(new EvaluateContextValues(constantValues, null));
 	}
 
 	/**
@@ -487,7 +467,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public boolean evaluateBoolean() throws PrismLangException
 	{
-		return evaluateBoolean(new EvaluateContextConstants(null));
+		return evaluateBoolean(new EvaluateContextValues(null, null));
 	}
 
 	/**
@@ -498,7 +478,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public boolean evaluateBoolean(Values constantValues) throws PrismLangException
 	{
-		return evaluateBoolean(new EvaluateContextConstants(constantValues));
+		return evaluateBoolean(new EvaluateContextValues(constantValues, null));
 	}
 
 	/**
@@ -570,7 +550,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public BigRational evaluateExact() throws PrismLangException
 	{
-		return evaluateExact(new EvaluateContextConstants(null));
+		return evaluateExact(new EvaluateContextValues(null, null));
 	}
 
 	/**
@@ -581,7 +561,7 @@ public abstract class Expression extends ASTElement
 	 */
 	public BigRational evaluateExact(Values constantValues) throws PrismLangException
 	{
-		return evaluateExact(new EvaluateContextConstants(constantValues));
+		return evaluateExact(new EvaluateContextValues(constantValues, null));
 	}
 
 	/**

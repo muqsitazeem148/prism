@@ -1,0 +1,70 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Thu Apr 28 18:33:52 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/firewire/abst/deadline.nm ../prism-examples/mdps/firewire/abst/deadline.pctl -s -const 'delay=4,deadline=3000,fast=.1'
+
+Parsing model file "../prism-examples/mdps/firewire/abst/deadline.nm"...
+
+Type:        MDP
+Modules:     abstract_firewire 
+Variables:   y x s 
+
+Parsing properties file "../prism-examples/mdps/firewire/abst/deadline.pctl"...
+
+1 property:
+(1) Pmin=? [ true U (s=10) ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmin=? [ true U (s=10) ]
+Model constants: deadline=3000,delay=4,fast=0.1
+
+Building model...
+Model constants: deadline=3000,delay=4,fast=0.1
+
+Computing reachable states...
+
+Reachability (BFS): 3058 iterations in 3.12 seconds (average 0.001021, setup 0.00)
+
+Time for model construction: 46.982 seconds.
+
+Type:        MDP
+States:      1660548 (1 initial)
+Transitions: 1990897
+Choices:     1908547
+
+Transition matrix: 11803 nodes (4 terminal), 1990897 minterms, vars: 24r/24c/2nd
+
+Prob0E: 344 iterations in 2.85 seconds (average 0.008299, setup 0.00)
+
+Prob1A: 2716 iterations in 3.48 seconds (average 0.001283, setup 0.00)
+
+yes = 877378, no = 94015, maybe = 689155
+
+Computing remaining probabilities...
+Engine: Sparse
+1
+Building sparse matrix... [n=1660548, nc=862424, nnz=939674, k=3] [13.2 MB]
+Creating vector for yes... [12.7 MB]
+Allocating iteration vectors... [2 x 12.7 MB]
+TOTAL: [51.2 MB]
+
+Starting iterations...
+Iteration 488: max relative diff=0.263240, 5.01 sec so far
+Iteration 976: max relative diff=0.090176, 10.01 sec so far
+Iteration 1464: max relative diff=0.040071, 15.01 sec so far
+Iteration 1952: max relative diff=0.019531, 20.02 sec so far
+Iteration 2440: max relative diff=0.011087, 25.02 sec so far
+
+Iterative method: 2887 iterations in 29.94 seconds (average 0.010254, setup 0.34)
+
+Value in the initial state: 0.9668976741302538
+
+Time for model checking: 36.374 seconds.
+
+Result: 0.9668976741302538 (value in the initial state)
+

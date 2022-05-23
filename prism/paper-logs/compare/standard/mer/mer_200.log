@@ -1,0 +1,64 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Sun May 01 19:04:42 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/mer/mer2_2_full.nm ../prism-examples/mdps/mer/mer.pctl -s -prop 1 -const 'n=200,x=.1' -noprob1
+
+Parsing model file "../prism-examples/mdps/mer/mer2_2_full.nm"...
+
+Type:        MDP
+Modules:     arbiter user1 user2 property loops 
+Variables:   s r k commUser driveUser gc dc gd dd s1 r1 rescind1 s2 r2 rescind2 e u 
+
+Parsing properties file "../prism-examples/mdps/mer/mer.pctl"...
+
+2 properties:
+(1) Pmax=? [ F "err_G" ]
+(2) Pmax=? [ F<=K "err_G" ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ F "err_G" ]
+Model constants: n=200,x=0.1
+
+Building model...
+Model constants: n=200,x=0.1
+
+Computing reachable states...
+
+Reachability (BFS): 2029 iterations in 7.82 seconds (average 0.003853, setup 0.00)
+
+Time for model construction: 7.969 seconds.
+
+Type:        MDP
+States:      1182964 (1 initial)
+Transitions: 4659754
+Choices:     4542739
+
+Transition matrix: 29706 nodes (6 terminal), 4659754 minterms, vars: 36r/36c/22nd
+
+Prob0A: 14 iterations in 0.10 seconds (average 0.006929, setup 0.00)
+
+yes = 747822, no = 220896, maybe = 214246
+
+Computing remaining probabilities...
+Engine: Sparse
+1
+Building sparse matrix... [n=1182964, nc=525348, nnz=565145, k=5] [8.1 MB]
+Creating vector for yes... [9.0 MB]
+Allocating iteration vectors... [2 x 9.0 MB]
+TOTAL: [35.2 MB]
+
+Starting iterations...
+
+Iterative method: 65 iterations in 1.13 seconds (average 0.010538, setup 0.45)
+
+Value in the initial state: 0.21739124736
+
+Time for model checking: 1.242 seconds.
+
+Result: 0.21739124736 (value in the initial state)
+

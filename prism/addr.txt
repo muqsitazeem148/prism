@@ -1,0 +1,1 @@
+logs/pred/optimal_policies/firewire/firewire_op_4_10000.log

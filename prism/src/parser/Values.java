@@ -491,14 +491,14 @@ public class Values implements Cloneable //implements Comparable
 	/**
 	 * Format a value (as an Object) as a string.
 	 */
-	public static String valToString(Object o)
+	private String valToString(Object o)
 	{
 		String s;
 		
 		if (o instanceof Double) {
-			s = PrismUtils.formatDouble(12, (double) o);
+			s = PrismUtils.formatDouble((double)o);
 		} else {
-			s = String.valueOf(o);
+			s = o.toString();
 		}
 		
 		return s;

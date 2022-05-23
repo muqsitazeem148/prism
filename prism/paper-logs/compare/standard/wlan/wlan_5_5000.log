@@ -1,0 +1,79 @@
+PRISM
+=====
+
+Version: 4.6
+Date: Sat May 14 18:05:13 IRDT 2022
+Hostname: sadegh-H81M-S2PH
+Memory limits: cudd=1g, java(heap)=910.5m
+Command line: prism ../prism-examples/mdps/wlan/wlan5.nm ../prism-examples/mdps/wlan/wlan.pctl -s -prop 2 -noprob1 -const 'k=5,TRANS_TIME_MAX=5000'
+
+Parsing model file "../prism-examples/mdps/wlan/wlan5.nm"...
+
+Type:        MDP
+Modules:     medium station1 station2 
+Variables:   c1 c2 x1 s1 slot1 backoff1 bc1 x2 s2 slot2 backoff2 bc2 
+
+Parsing properties file "../prism-examples/mdps/wlan/wlan.pctl"...
+
+9 properties:
+(1) P>=1 [ true U s1=12&s2=12 ]
+(2) Pmax=? [ true U bc1=k|bc2=k ]
+(3) R{"collisions"}max=? [ F s1=12&s2=12 ]
+(4) R{"time"}max=? [ F s1=12&s2=12 ]
+(5) R{"time"}max=? [ F s1=12|s2=12 ]
+(6) R{"time"}max=? [ F s1=12 ]
+(7) R{"cost"}max=? [ F s1=12&s2=12 ]
+(8) R{"cost"}max=? [ F s1=12|s2=12 ]
+(9) R{"cost"}max=? [ F s1=12 ]
+
+---------------------------------------------------------------------
+
+Model checking: Pmax=? [ true U bc1=k|bc2=k ]
+Model constants: TRANS_TIME_MAX=5000
+Property constants: k=5
+
+Building model...
+Model constants: TRANS_TIME_MAX=5000
+
+Computing reachable states...
+
+Reachability (BFS): 5156 iterations in 454.77 seconds (average 0.088202, setup 0.00)
+
+Time for model construction: 589.591 seconds.
+
+Type:        MDP
+States:      9129518 (1 initial)
+Transitions: 18688380
+Choices:     17404494
+
+Transition matrix: 1168060 nodes (7 terminal), 18688380 minterms, vars: 62r/62c/7nd
+
+Prob0A: 399 iterations in 55.94 seconds (average 0.140203, setup 0.00)
+
+yes = 6351592, no = 2590967, maybe = 186959
+
+Computing remaining probabilities...
+Engine: Sparse
+1
+Building sparse matrix... [n=9129518, nc=440117, nnz=468331, k=3] [14.5 MB]
+Creating vector for yes... [69.7 MB]
+Allocating iteration vectors... [2 x 69.7 MB]
+TOTAL: [223.4 MB]
+
+Starting iterations...
+Iteration 114: max relative diff=1.000000, 5.01 sec so far
+Iteration 228: max relative diff=1.000000, 10.05 sec so far
+Iteration 342: max relative diff=1.000000, 15.09 sec so far
+Iteration 456: max relative diff=0.008772, 20.12 sec so far
+Iteration 570: max relative diff=0.005848, 25.16 sec so far
+Iteration 684: max relative diff=0.001280, 30.18 sec so far
+Iteration 798: max relative diff=0.000015, 35.21 sec so far
+
+Iterative method: 816 iterations in 40.06 seconds (average 0.044124, setup 4.05)
+
+Value in the initial state: 1.8566606684089493E-5
+
+Time for model checking: 96.638 seconds.
+
+Result: 1.8566606684089493E-5 (value in the initial state)
+
