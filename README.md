@@ -2,6 +2,15 @@
 
 This is PRISM (Probabilistic Symbolic Model Checker).
 
+*********************************************************************
+This version includes the implementations and log files for the paper “This version includes the implementations” developed by Mohammadsadedgh Mohagheghi
+
+Source files for the implementation of the paper's approaches are located in: /prism/src/sparse  
+
+Log files are located in prism/paper-logs/compare
+
+To run experiments extract the .zip files in the “Opt_policies” and “uf_states” folders and then run the shell scripts (coin.sh,…).
+*********************************************************************
 
 ## Installation
 
