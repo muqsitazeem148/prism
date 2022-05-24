@@ -1,1 +1,1 @@
-This folder is for loging results of running experiments.
+This folder is for logging results of running experiments.
