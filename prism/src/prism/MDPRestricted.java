@@ -31,8 +31,12 @@ import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
 import jdd.SanityJDD;
+import odd.ODDNode;
+import parser.VarList;
 
+import javax.xml.bind.SchemaOutputResolver;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Transformation for obtaining the MEC restricted MDP M, given a set of states and stable transitions
@@ -40,7 +44,6 @@ import java.util.List;
  * i.e., they are replaced with JDD.ZERO. In the future, more advanced treatment
  * may be added.
  * <br>
- * Note as well that evaluating expressions in the quotient model will not lead to correct results.
  */
 public class MDPRestricted implements ModelTransformation<NondetModel,NondetModel>
 {
@@ -108,10 +111,10 @@ public class MDPRestricted implements ModelTransformation<NondetModel,NondetMode
 	 *
 	 * <br>[ REFs: <i>result</i>, DEREFs: equivalenceClasses, statesOfInterest ]
 	 */
-	public static MDPRestricted transform(PrismComponent parent, final NondetModel model, JDDNode mec, JDDNode stableTrans)
+	public static MDPRestricted transform(PrismComponent parent, final NondetModel model, JDDNode mec)
 			throws PrismException
 	{
-		final MDPRestrictOperator transform = new MDPRestrictOperator(parent, model,mec, stableTrans);
+		final MDPRestrictOperator transform = new MDPRestrictOperator(parent, model,mec);
 		final JDDNode transformedmec = transform.mapStateSet(mec);
 
 		final NondetModel mdprestricted = model.getTransformed(transform);
@@ -121,23 +124,32 @@ public class MDPRestricted implements ModelTransformation<NondetModel,NondetMode
 
 	/** The transformation operator for the MDPQuotient operation. */
 	public static class MDPRestrictOperator extends NondetModelTransformationOperator {
-		/** the list of equivalence classes */
-		private JDDNode stableTrans;
+		private JDDNode stateActionWithSelfLoop;
+
+		private JDDNode stateActionWithoutSelfLoop;
 		private JDDNode mec;
 		/**
 		 * A symbolic mapping (0/1-ADD) from states (row vars) to their representative (col vars)
-		 * in the quotient model.<br>
+		 * in the restricted model.<br>
 		 * For states in equivalence classes map to the representative, states not contained in
 		 * an equivalent class are mapped to themselves.
 		 */
 		private JDDNode map;
 
-		/** State set: states contained in equivalence classes */
-		private JDDNode inEC;
-
 		/** State set: states not contained in equivalence classes */
-		private JDDNode notInEC;
-		
+		private JDDNode notMEC;
+
+
+		/** The transition relation of the quotient model */
+		private JDDNode newTrans;
+		/** The 0/1-transition relation of the quotient model */
+		private JDDNode newTrans01;
+
+		/** New transition matrix already computed? */
+		private boolean computed = false;
+
+		/** The parent prism component (for logging) */
+		private PrismComponent parent;
 
 		/**
 		 * n JDDVars, where n = number of row vars in the original model.
@@ -146,66 +158,54 @@ public class MDPRestricted implements ModelTransformation<NondetModel,NondetMode
 		 */
 		private JDDVars actFromStates;
 
-		/** Set of (s,alpha) where all successors are again in the same equivalence class */
-		private JDDNode stateActionsInsideECs;
-
-		/** The transition relation of the quotient model */
-		private JDDNode newTrans;
-		/** The 0/1-transition relation of the quotient model */
-		private JDDNode newTrans01;
-		/** Self loops on quotient representative states that are not to be dropped */
-		private JDDNode ecRemainingSelfLoops = JDD.Constant(0);
-
-		/** New transition matrix already computed? */
-		private boolean computed = false;
-
-		/** The parent prism component (for logging) */
-		private PrismComponent parent;
-
 		/** Debug: Verbose output? */
 		private boolean verbose = false;
 
 		/** Constructor */
-		public MDPRestrictOperator(PrismComponent parent, NondetModel model, JDDNode mec, JDDNode stableTrans)
+		public MDPRestrictOperator(PrismComponent parent, NondetModel model, JDDNode mec)
 		{
 			super(model);
 
-			this.stableTrans = stableTrans;
 			this.mec = mec;
 			this.parent = parent;
 
 			map = JDD.Constant(0);
-			inEC = JDD.Constant(0);
-			stateActionsInsideECs = JDD.Constant(0);
-
-			JDDNode restricted = JDD.Restrict(mec.copy(), stableTrans);
 
 			// all states not in EC
-			notInEC = JDD.And(model.getReach().copy(),
-					JDD.Not(inEC.copy()));
+			notMEC = JDD.And(model.getReach().copy(),
+					JDD.Not(mec.copy()));
 
-			// map all states not in EC to themselves
-			map = JDD.ITE(notInEC.copy(),
+			// map all states inside EC to themselfs
+			map = JDD.ITE(mec.copy(),
 					JDD.Identity(model.getAllDDRowVars(), model.getAllDDColVars()),
 					map);
+
+			stateActionWithoutSelfLoop = JDD.Constant(0);
+
+			for (int i = 0  ; i < originalModel.getNumStates();i++){
+				JDDNode state = originalModel.getReach();
+				JDDNode stateCol = JDD.PermuteVariables(state.copy(), model.getAllDDRowVars(), model.getAllDDColVars());
+				JDDNode transFromState01 = JDD.And(state.copy(), model.getTrans01().copy());
+				JDDNode noSelfLoop = JDD.Times(transFromState01.copy(), stateCol.copy());
+				stateActionWithoutSelfLoop  = JDD.Or(stateActionWithoutSelfLoop, JDD.ThereExists(noSelfLoop, originalModel.getAllDDColVars()));
+			}
+
+
+
 		}
 
 		@Override
 		public void clear()
 		{
-
 			JDD.Deref(mec);
-			JDD.Deref(stableTrans);
+			JDD.Deref(stateActionWithSelfLoop);
 			JDD.Deref(map);
-			JDD.Deref(inEC);
-			JDD.Deref(notInEC);
-			JDD.Deref(stateActionsInsideECs);
-			JDD.Deref(ecRemainingSelfLoops);
+			JDD.Deref(notMEC);
 			if (newTrans != null) JDD.Deref(newTrans);
 			if (newTrans01 != null) JDD.Deref(newTrans01);
+			super.clear();
 			if (actFromStates != null)
 				actFromStates.derefAll();
-			super.clear();
 		}
 
 		@Override
@@ -258,22 +258,31 @@ public class MDPRestricted implements ModelTransformation<NondetModel,NondetMode
 
 		private void compute() throws PrismException
 		{
+
+			newTrans = JDD.Constant(0);
+			JDDNode factor = JDD.Constant(2);
 			JDDNode trans = originalModel.getTrans().copy();
 
 
+			//newTrans = JDD.Times(trans.copy(), mec.copy());
 
-			JDDNode transUntouched = JDD.Times(trans.copy(), notInEC.copy());
-			if (verbose) JDD.PrintMinterms(parent.getLog(), transUntouched.copy(), "transUntouched");
-			transUntouched = JDD.Times(transUntouched, notTau());
-			if (verbose) JDD.PrintMinterms(parent.getLog(), transUntouched.copy(), "transUntouched (2)");
-			newTrans = JDD.Apply(JDD.MAX, newTrans, transUntouched);
-			if (verbose) JDD.PrintMinterms(parent.getLog(), newTrans.copy(), "newTrans");
 
+			//JDDNode transWithSelfLoop = JDD.Times(trans.copy(), stateActionWithSelfLoop.copy());
+			//stateActionWithoutSelfLoop = JDD.Apply(JDD.DIVIDE ,  stateActionWithoutSelfLoop, factor);
+			//JDDNode transWithoutSelfLoop = JDD.Times(trans.copy(), stateActionWithoutSelfLoop.copy());
+			//JDDNode transWithAddedLoop = JDD.Apply(JDD.TIMES , transWithoutSelfLoop , JDD.Constant(0.5));
+
+			//newTrans = JDD.Or(transWithAddedLoop.copy(), transWithSelfLoop.copy());
+			//JDD.PrintMinterms(parent.getLog(), stateActionWithoutSelfLoop.copy(), "No Self Loop:" );
+			//JDD.PrintMinterms(parent.getLog(), stateActionWithSelfLoop.copy(), "Self Loop:" );
+
+			newTrans = JDD.Times(trans.copy(), notTau());
 			newTrans01 = JDD.GreaterThan(newTrans.copy(), 0);
 
-			JDD.Deref(trans);
-
 			computed = true;
+
+			JDD.Deref(factor, trans);
+
 		}
 
 		/**
@@ -310,18 +319,7 @@ public class MDPRestricted implements ModelTransformation<NondetModel,NondetMode
 		@Override
 		public JDDNode getTransformedStateReward(JDDNode rew) throws PrismException
 		{
-			if (!computed) compute();
-
-			if (SanityJDD.enabled) {
-				SanityJDD.checkIsDDOverVars(rew, originalModel.getAllDDRowVars());
-			}
-
-			if (verbose) JDD.PrintMinterms(parent.getLog(), rew.copy(), "state rew");
-			// set state rewards for all EC states to zero
-			JDDNode result = JDD.Times(rew.copy(), JDD.Not(inEC.copy()));
-			if (verbose) JDD.PrintMinterms(parent.getLog(), result.copy(), "state rew (transformed)");
-
-			return result;
+			return rew.copy();
 		}
 
 		@Override
@@ -335,11 +333,11 @@ public class MDPRestricted implements ModelTransformation<NondetModel,NondetMode
 
 			// outgoing actions from ECs
 			if (verbose) JDD.PrintMinterms(parent.getLog(), rew.copy(), "trans rew");
-			JDDNode rewFromEC = JDD.Times(rew.copy(), inEC.copy());
+			JDDNode rewFromEC = JDD.Times(rew.copy(), mec.copy());
 			if (verbose) JDD.PrintMinterms(parent.getLog(), rewFromEC.copy(), "rewFromEC (1)");
 			rewFromEC = JDD.PermuteVariables(rewFromEC, originalModel.getAllDDRowVars(), actFromStates);
 			if (verbose) JDD.PrintMinterms(parent.getLog(), rewFromEC.copy(), "rewFromEC (2)");
-			rewFromEC = JDD.Times(tau(), rewFromEC);
+			//rewFromEC = JDD.Times(tau(), rewFromEC);
 			if (verbose) JDD.PrintMinterms(parent.getLog(), rewFromEC.copy(), "rewFromEC (3)");
 			rewFromEC = JDD.PermuteVariables(rewFromEC, originalModel.getAllDDColVars(), originalModel.getAllDDRowVars());
 			if (verbose) JDD.PrintMinterms(parent.getLog(), rewFromEC.copy(), "rewFromEC (4)");
@@ -350,16 +348,12 @@ public class MDPRestricted implements ModelTransformation<NondetModel,NondetMode
 			rewFromEC = JDD.Times(rewFromEC, newTrans01.copy());
 			if (verbose) JDD.PrintMinterms(parent.getLog(), rewFromEC.copy(), "rewFromEC (7)");
 
-			// for the remaining self loops from ECs (to avoid deadlocks), we strip the
-			// transition rewards
-			if (verbose) JDD.PrintMinterms(parent.getLog(), ecRemainingSelfLoops.copy(), "ecRemainingSelfLoops");
-			rewFromEC = JDD.Times(rewFromEC, JDD.Not(ecRemainingSelfLoops.copy()));
-			if (verbose) JDD.PrintMinterms(parent.getLog(), rewFromEC.copy(), "rewFromEC (8)");
 
 			// transformedRew is the combination of the outgoing actions from the ECs
 			// and the original actions (tagged with notTau)
 			if (verbose) JDD.PrintMinterms(parent.getLog(), rew.copy(), "trans rew");
-			JDDNode transformedRew = JDD.Apply(JDD.MAX, JDD.Times(notTau(), rew.copy()), rewFromEC);
+			//JDDNode transformedRew = JDD.Apply(JDD.MAX, JDD.Times(notTau(), rew.copy()), rewFromEC);
+			JDDNode transformedRew = rew.copy();
 			transformedRew = JDD.Times(transformedRew, newTrans01.copy());
 			if (verbose) JDD.PrintMinterms(parent.getLog(), transformedRew.copy(), "transformedRew");
 
@@ -373,28 +367,31 @@ public class MDPRestricted implements ModelTransformation<NondetModel,NondetMode
 				return null;
 			}
 
-			JDDNode transActionsNormal = originalModel.getTransActions().copy();
-			if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsNormal.copy(), "transActionsNormal (1)");
-			transActionsNormal = JDD.Times(transActionsNormal, notTau());
-			if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsNormal.copy(), "transActionsNormal (2)");
+			//JDDNode transActionsNormal = originalModel.getTransActions().copy();
+			//if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsNormal.copy(), "transActionsNormal (1)");
+			//transActionsNormal = JDD.Times(transActionsNormal, notTau());
+			//if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsNormal.copy(), "transActionsNormal (2)");
 
-			JDDNode transActionsFromEC = originalModel.getTransActions().copy();
-			if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsFromEC.copy(), "transActionsFromEC (1)");
+			//JDDNode transActionsFromEC = originalModel.getTransActions().copy();
+			//if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsFromEC.copy(), "transActionsFromEC (1)");
 			// shift from states to actFromEC
-			transActionsFromEC = JDD.PermuteVariables(transActionsFromEC, originalModel.getAllDDRowVars(), actFromStates);
-			if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsFromEC.copy(), "transActionsFromEC (2)");
-			transActionsFromEC = JDD.Times(transActionsFromEC, tau());
-			if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsFromEC.copy(), "transActionsFromEC (3)");
+			//transActionsFromEC = JDD.PermuteVariables(transActionsFromEC, originalModel.getAllDDRowVars(), actFromStates);
+			//if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsFromEC.copy(), "transActionsFromEC (2)");
+			//transActionsFromEC = JDD.Times(transActionsFromEC, tau());
+			//if (verbose) JDD.PrintMinterms(parent.getLog(), transActionsFromEC.copy(), "transActionsFromEC (3)");
 
-			JDDNode transformedTransActions = JDD.Apply(JDD.MAX, transActionsNormal, transActionsFromEC);
-			if (verbose) JDD.PrintMinterms(parent.getLog(), transformedTransActions.copy(), "transformedTransActions");
-
+			//JDDNode transformedTransActions = JDD.Apply(JDD.MAX, transActionsNormal, transActionsFromEC);
+			//JDDNode transformedTransActions = newTrans;
+			//if (verbose) JDD.PrintMinterms(parent.getLog(), transformedTransActions.copy(), "transformedTransActions");
+			JDDNode transformedTransActions = originalModel.getTransActions().copy();
 			transformedTransActions = JDD.Times(transformedTransActions, JDD.ThereExists(newTrans01.copy(), originalModel.getAllDDColVars()));
+			//transformedTransActions = JDD.Times(transformedTransActions, JDD.ThereExists(newTrans01.copy(), originalModel.getAllDDColVars()));
 
 			//transformedTransActions = JDD.Times(transformedTransActions, newTrans01);
-			if (verbose) JDD.PrintMinterms(parent.getLog(), transformedTransActions.copy(), "transformedTransActions");
+			//if (verbose) JDD.PrintMinterms(parent.getLog(), transformedTransActions.copy(), "transformedTransActions");
 
-			return transformedTransActions;
+			//return transformedTransActions;
+			return null;
 		}
 
 		@Override
@@ -415,7 +412,7 @@ public class MDPRestricted implements ModelTransformation<NondetModel,NondetMode
 			//JDDNode removed = JDD.And(inEC.copy(), JDD.Not(representatives.copy()));
 			//JDDNode newReach = JDD.And(originalModel.getReach().copy(), JDD.Not(removed));
 
-			return null; //newReach;
+			return mec;
 		}
 
 		/**

@@ -28,6 +28,7 @@ package explicit;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
@@ -61,6 +62,297 @@ public class MDPModelChecker extends ProbModelChecker
 	
 	// Model checking functions
 
+
+	@Override
+	protected StateValues checkExpressionMultiObjMEC(Model model, ExpressionFunc expr) throws PrismException
+	{
+		boolean memoryless;
+		if (((ExpressionFunc) expr).getName().equals("multi"))
+			memoryless = false;
+		else if (((ExpressionFunc) expr).getName().equals("mlessmulti"))
+			memoryless = true;
+		else throw new UnsupportedOperationException("Unsupported function: " + expr);
+
+		// Make sure we are only expected to compute a value for a single state
+		if (currentFilter == null || !(currentFilter.getOperator() == Filter.FilterOperator.STATE))
+			throw new PrismException("Multi-objective model checking can only compute values from a single state");
+
+		int numObjectives = expr.getNumOperands();
+
+		ArrayList<Operator> operators = new ArrayList<Operator>();
+		ArrayList<Double> bounds = new ArrayList<Double>();
+		ArrayList<MDPRewards> rewards = new ArrayList<MDPRewards>();
+
+		int numericalCount = 0; //used to determine if we do multi-obj.
+		ArrayList<Integer> numericalIndices = new ArrayList<Integer>();
+		//extract data
+		for (int i = 0; i < numObjectives; i++) {
+			if (expr.getOperand(i) instanceof ExpressionReward) {
+				ExpressionReward operand = (ExpressionReward) expr.getOperand(i);
+				RelOp relOp = operand.getRelOp();
+
+				//check that the parameters are of the form we can handle
+				if (!(operand.getExpression() instanceof ExpressionTemporal))
+					throw new PrismException("The reward subexpression must be a temporal expression.");
+				ExpressionTemporal eT = (ExpressionTemporal) operand.getExpression();
+				if (eT.getOperator() != ExpressionTemporal.R_S)
+					throw new PrismException("We only support steady state (long-run) rewards.");
+
+				//comparison operator
+				Operator op;
+				switch (relOp) {
+					case MAX:
+						numericalCount++;
+						numericalIndices.add(i);
+						op = Operator.R_MAX;
+						break;
+					case GT:// currently do not support
+						//relOps.add(1);
+						throw new PrismException("Multi-objective properties can not use strict inequalities on P/R operators");
+					case GEQ:
+						op = Operator.R_GE;
+						break;
+					case MIN:
+						numericalCount++;
+						numericalIndices.add(i);
+						op = Operator.R_MIN;
+						break;
+					case LT:
+						//relOps.add(6);
+						throw new PrismException("Multi-objective properties can not use strict inequalities on P/R operators");
+					case LEQ:
+						op = Operator.R_LE;
+						break;
+					default:
+						throw new PrismException("Multi-objective properties can only contain P/R operators with max/min=? or lower/upper probability bounds");
+				}
+				operators.add(op);
+
+				// Store rewards bound
+				Expression rb = operand.getReward();
+
+				if (rb != null) {
+					double p = rb.evaluateDouble(constantValues);
+					bounds.add(p);
+				} else {
+					bounds.add(-1.0);
+				}
+
+				Object rs = operand.getRewardStructIndex();
+				RewardStruct rewStruct = null;
+				// Get reward info
+				if (modulesFile == null)
+					throw new PrismException("No model file to obtain reward structures");
+				if (modulesFile.getNumRewardStructs() == 0)
+					throw new PrismException("Model has no rewards specified");
+				if (rs == null) {
+					rewStruct = modulesFile.getRewardStruct(0);
+				} else if (rs instanceof Expression) {
+					i = ((Expression) rs).evaluateInt(constantValues);
+					rs = new Integer(i); // for better error reporting below
+					rewStruct = modulesFile.getRewardStruct(i - 1);
+				} else if (rs instanceof String) {
+					rewStruct = modulesFile.getRewardStructByName((String) rs);
+				}
+				if (rewStruct == null)
+					throw new PrismException("Invalid reward structure index \"" + rs + "\"");
+
+				// Build rewards
+				ConstructRewards constructRewards = new ConstructRewards(mainLog);
+				MDPRewards mdpRewards = constructRewards.buildMDPRewardStructure((MDP) model, rewStruct, constantValues);
+				rewards.add(mdpRewards);
+
+			} else {
+				throw new PrismException("Only long-run properties are supported.");
+			}
+		}
+
+		List<StateValues> sols = new ArrayList<>();
+
+		//Compute MECs of the given MDP
+		ECComputer ecc = ECComputerDefault.createECComputer(null, (MDP) model);
+		ecc.computeMECStates();
+		List<BitSet> mecs = ecc.getMECStates();
+
+		//Perform LP optimization on every discovered MEC, store the respective solutions in sols.
+		//Therefore we have to construct the MEC-restricted MDP for every MEC
+		int mecNum = 0;
+		for (BitSet mec : mecs){
+
+			//Contstruct MEC-restricted MDP for MEC mec
+			List<MDPRewards> newRewards = new ArrayList<MDPRewards>();
+			List<Integer> states = new ArrayList<>();
+			List<List<Integer>> availableActions = new ArrayList<>();
+
+			for (MDPRewards r : rewards){
+				MDPRewardsSimple rew = new MDPRewardsSimple(mec.cardinality());
+				newRewards.add(rew);
+			}
+			int stateCount = 0;
+			for (int s = 0; s<model.getNumStates(); s++){
+				if (mec.get(s) == true){
+					states.add( (Integer) s);
+					List<Object> actionsFromS = ((MDP) model).getAvailableActions(s);
+					List<Integer> choicesFromS = new ArrayList<>();
+					for (Object action : actionsFromS){
+						int choice = ((MDP) model).getChoiceByAction(s, action);
+
+						//Check for every choice if all successors are in MEC, if not then don't add it to the MEC-restricted MDP
+						SuccessorsIterator it = ((MDP) model).getSuccessors(s,choice);
+						boolean addChoice = true;
+						while (it.hasNext()){
+							if ( ! mec.get(it.nextInt()) ){
+								addChoice = false;
+							}
+						}
+						if(addChoice) choicesFromS.add(choice);
+						for  (int i = 0 ; i < rewards.size() ; i++){
+							((MDPRewardsSimple) newRewards.get(i)).setTransitionReward(stateCount, choice, rewards.get(i).getTransitionReward(s, choice));
+						}
+					}
+					availableActions.add(choicesFromS);
+					stateCount++;
+				}
+				else {
+					availableActions.add(new ArrayList<>());
+				}
+			}
+
+			List<MDPRewards> temp = new ArrayList<MDPRewards>(rewards);
+			rewards = (ArrayList<MDPRewards>) newRewards;
+			MDP currentMEC = new MDPSparse( (MDP) model, states, availableActions );  //MEC-restricted MDP
+
+			//Compute solution for MEC using Multigains LP-optimization
+			StateValues sol = checkExpressionMultiObjective(currentMEC, expr);
+			mainLog.println("Solution for MEC " + mecNum + ": " + sol.toString());
+			sols.add(sol);
+
+			rewards = (ArrayList<MDPRewards>) temp;
+			mecNum++;
+		}
+
+
+		//Create Adapted MEC quotient using the solutions from sols
+
+		//Build MEC-quotient
+		EquivalenceRelationInteger eq = new EquivalenceRelationInteger(mecs);
+		BasicModelTransformation<MDP, MDPEquiv> quotientTransform = MDPEquiv.transformDroppingLoops((MDP) model, eq);
+		MDPEquiv quotient = quotientTransform.getTransformedModel();
+		MDP quotientModel = new MDPSparse(quotient);
+		MDPSimple quotientModelSimple = new MDPSimple(quotientModel);
+
+		//add new goal State and transitions to goal state + create new reward structures
+		//and use the previously computed solutions as rewards for the new transitions to sgoal
+		int sgoal = quotientModelSimple.addState();
+		Distribution distr = new Distribution();
+		distr.add(sgoal, 1);
+		List<MDPRewards> newRewards = new ArrayList<MDPRewards>();
+		for (MDPRewards r : rewards){
+			MDPRewardsSimple rew = new MDPRewardsSimple(quotientModelSimple.numStates);
+			newRewards.add(rew);
+		}
+
+		mecNum = 0;
+		for (int i = 0; i < quotientModelSimple.numStates ; i++) {
+			int numChoicesOld = quotientModelSimple.getNumChoices(i);
+			if (eq.isRepresentative(i) && eq.getEquivalenceClassOrNull(i) != null) {
+				for (int z = 0; z < sols.get(mecNum).getSize(); z++){
+					for (int j = 0; j < newRewards.size() ; j++) {
+						String action = "a" + i + "->goal" + ":" +z;
+						quotientModelSimple.addActionLabelledChoice(i, distr, action);
+						((MDPRewardsSimple) newRewards.get(j)).setTransitionReward(i, z + numChoicesOld, ((TileList) sols.get(mecNum).getValue(0)).getPoints().get(z).getCoord(j));
+					}
+				}
+			mecNum++;
+			}
+		}
+
+		rewards = (ArrayList<MDPRewards>) newRewards;
+
+		//Run Weigthed Value iteration on final adapted MDP-quotient and return the result
+		return checkExpressionQuotient(quotientModelSimple, rewards, expr);
+	}
+
+	/** Method for performing Weighted Value Iteration for total reward.
+	 * This currently only supports maximizing 2 rewards.
+	 */
+	private StateValues checkExpressionQuotient(MDP quotientModel, List<MDPRewards> rewards, ExpressionFunc expr) throws PrismException {
+
+		WeightedVI weightedVI = new WeightedVI(quotientModel, rewards, maxIters);
+
+		//Run weigthed value iteration with initial weights (1,0) and (0,1)
+		ArrayList<Point> computedPoints = new ArrayList<Point>();
+		ArrayList<Point> computedDirections = new ArrayList<Point>();
+		ArrayList<Point> pointsForInitialTile = new ArrayList<Point>();
+		Point p1 = weightedVI.solve(new Point(new double[] {1.0,0.0}));
+		Point p2 = weightedVI.solve(new Point(new double[] {0.0,1.0}));
+		pointsForInitialTile.add(p1);
+		pointsForInitialTile.add(p2);
+		//mainLog.println("p2 " + p2);
+
+		int numberOfPoints = 2;
+		boolean verbose = true;
+
+		Tile initialTile = new Tile(pointsForInitialTile);
+		TileList tileList = new TileList(initialTile, null, 10e-3);
+
+		Point direction = tileList.getCandidateHyperplane();
+
+		if (verbose) {
+			mainLog.println("The initial direction is " + direction);
+		}
+
+		//Find new weights and add points to the pareto set until no new weights can be found.
+		boolean decided = false;
+		int iters = 0;
+		int output = 0;
+		while (iters < maxIters) {
+			iters++;
+
+			double[] result;
+			Point newPoint = weightedVI.solve(direction);
+			numberOfPoints++;
+
+			if (verbose) {
+				mainLog.println("\n" + numberOfPoints + ": New point is " + newPoint + ".");
+				mainLog.println("TileList:" + tileList);
+			}
+
+			computedPoints.add(newPoint);
+			computedDirections.add(direction);
+
+			tileList.addNewPoint(newPoint);
+			//mainLog.println("\nTiles after adding: " + tileList);
+			//compute new direction
+			direction = tileList.getCandidateHyperplane();
+
+			if (verbose) {
+				mainLog.println("New direction is " + direction);
+				//mainLog.println("TileList: " + tileList);
+
+			}
+
+			if (direction == null) {
+				//no tile could be improved
+				decided = true;
+				break;
+			}
+		}
+
+		//only works for two objectives for now
+
+		List<Integer> numericalIndices = new ArrayList<Integer>();
+		numericalIndices.add(0);
+		numericalIndices.add(1);
+
+		TileList.addStoredTileList(expr, expr.getOperand(numericalIndices.get(0)),
+				expr.getOperand(numericalIndices.get(1)), tileList);
+		StateValues sv = new StateValues(TypeVoid.getInstance(), tileList, quotientModel);
+
+
+	return sv;
+
+	}
 
 	@Override
 	protected StateValues checkExpressionMultiObjective(Model model,

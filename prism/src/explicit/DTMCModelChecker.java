@@ -47,6 +47,7 @@ import explicit.rewards.MCRewards;
 import explicit.rewards.MDPRewards;
 import explicit.rewards.Rewards;
 import parser.ast.Expression;
+import parser.ast.ExpressionFunc;
 import prism.AccuracyFactory;
 import prism.ModelType;
 import prism.OptionsIntervalIteration;
@@ -70,6 +71,11 @@ public class DTMCModelChecker extends ProbModelChecker
 	public DTMCModelChecker(PrismComponent parent) throws PrismException
 	{
 		super(parent);
+	}
+
+	@Override
+	protected StateValues checkExpressionMultiObjMEC(Model model, ExpressionFunc expr) throws PrismException {
+		return null;
 	}
 
 	// Model checking functions

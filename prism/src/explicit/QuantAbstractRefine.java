@@ -29,6 +29,7 @@ package explicit;
 import java.io.*;
 import java.util.*;
 
+import parser.ast.ExpressionFunc;
 import prism.*;
 import explicit.ProbModelChecker.TermCrit;
 import explicit.ProbModelChecker.ValIterDir;
@@ -150,7 +151,12 @@ public abstract class QuantAbstractRefine extends PrismComponent
 		super(parent);
 		// Create dummy model checker to store options
 		try {
-			mcOptions = new ProbModelChecker(null);
+			mcOptions = new ProbModelChecker(null) {
+				@Override
+				protected StateValues checkExpressionMultiObjMEC(Model model, ExpressionFunc expr) throws PrismException {
+					return null;
+				}
+			};
 		} catch (PrismException e) {
 			// Won't happen
 		}

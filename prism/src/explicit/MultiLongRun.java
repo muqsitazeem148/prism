@@ -161,7 +161,8 @@ public class MultiLongRun {
 		ECComputer ecc = ECComputerDefault.createECComputer(null, mdp);
 		ecc.computeMECStates();
 		mecs = ecc.getMECStates();
-		
+
+
 		this.numMecStates = 0;
 		for (BitSet b : mecs)
 			this.numMecStates += b.cardinality();

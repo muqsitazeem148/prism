@@ -56,7 +56,7 @@ import static prism.PrismSettings.DEFAULT_EXPORT_MODEL_PRECISION;
 /**
  * Super class for explicit-state probabilistic model checkers.
  */
-public class ProbModelChecker extends NonProbModelChecker
+public abstract class ProbModelChecker extends NonProbModelChecker
 {
 	// Flags/settings
 	// (NB: defaults do not necessarily coincide with PRISM)
@@ -77,6 +77,8 @@ public class ProbModelChecker extends NonProbModelChecker
 	protected boolean precomp = true;
 	protected boolean prob0 = true;
 	protected boolean prob1 = true;
+
+	protected boolean useMECDecomp = true;
 	// should we suppress log output during precomputations?
 	protected boolean silentPrecomputations = false;
 	// Use predecessor relation? (e.g. for precomputation)
@@ -91,8 +93,10 @@ public class ProbModelChecker extends NonProbModelChecker
 	protected boolean exportAdv = false;
 	protected String exportAdvFilename;
 
+
 	// Delay between occasional updates for slow processes, e.g. numerical solution (milliseconds)
 	public static final int UPDATE_DELAY = 5000;
+
 
 
 	// Enums for flags/settings
@@ -238,6 +242,8 @@ public class ProbModelChecker extends NonProbModelChecker
 				setExportAdv(true);
 			// PRISM_EXPORT_ADV_FILENAME
 			setExportAdvFilename(settings.getString(PrismSettings.PRISM_EXPORT_ADV_FILENAME));
+
+
 		}
 	}
 
@@ -522,7 +528,12 @@ public class ProbModelChecker extends NonProbModelChecker
 		//Multi-objective model-checking
 		else if (expr instanceof ExpressionFunc
 				&& (((ExpressionFunc) expr).getName().equals("multi") || ((ExpressionFunc) expr).getName().equals("mlessmulti"))) {
-			res = checkExpressionMultiObjective(model, (ExpressionFunc) expr);
+
+				if (useMECDecomp){
+					res = checkExpressionMultiObjMEC(model, (ExpressionFunc) expr);
+				}
+				else
+					res = checkExpressionMultiObjective(model, (ExpressionFunc) expr);
 		}
 		// Otherwise, use the superclass
 		else {
@@ -530,6 +541,11 @@ public class ProbModelChecker extends NonProbModelChecker
 		}
 
 		return res;
+	}
+
+
+	protected StateValues checkExpressionMultiObjMEC(Model model, ExpressionFunc expr) throws PrismException{
+		throw new PrismException("Multi-objective model-checking is not available for this type of models");
 	}
 
 	protected StateValues checkExpressionMultiObjective(Model model, ExpressionFunc expr) throws PrismException

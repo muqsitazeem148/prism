@@ -256,6 +256,7 @@ public class MDPQuotient implements ModelTransformation<NondetModel,NondetModel>
 				JDD.Deref(ecCol, transFromEC01);
 			}
 
+
 			// all states not in EC
 			notInEC = JDD.And(model.getReach().copy(),
 					JDD.Not(inEC.copy()));

@@ -289,6 +289,11 @@ public class ProbModel implements Model
 		return getTransRewards(0);
 	}
 
+	public List<JDDNode> getTransRewardsList()
+	{
+		return Arrays.asList(transRewards);
+	}
+
 	public JDDNode getTransRewards(int i)
 	{
 		return (i >= 0 && i < numRewardStructs) ? transRewards[i] : null;
@@ -814,8 +819,7 @@ public class ProbModel implements Model
 
 	// export transition matrix to a file
 
-	public void exportToFile(int exportType, boolean explicit, File file, int precision) throws FileNotFoundException, PrismException
-	{
+	public void exportToFile(int exportType, boolean explicit, File file, int precision) throws PrismException, FileNotFoundException {
 		if (!explicit) {
 			PrismMTBDD.ExportMatrix(trans, getTransSymbol(), allDDRowVars, allDDColVars, odd, exportType, (file != null) ? file.getPath() : null, precision);
 		} else {
@@ -824,15 +828,13 @@ public class ProbModel implements Model
 	}
 
 	@Override
-	public void exportStateRewardsToFile(int r, int exportType, File file, int precision) throws FileNotFoundException, PrismException
-	{
+	public void exportStateRewardsToFile(int r, int exportType, File file, int precision) throws PrismException, FileNotFoundException {
 		PrismMTBDD.ExportVector(stateRewards[r], "c" + (r + 1), allDDRowVars, odd, exportType, (file == null) ? null : file.getPath(), precision);
 	}
 
 	@Deprecated
 	@Override
-	public String exportStateRewardsToFile(int exportType, File file, int precision) throws FileNotFoundException, PrismException
-	{
+	public String exportStateRewardsToFile(int exportType, File file, int precision) throws PrismException, FileNotFoundException {
 		// export state rewards vector to a file
 		// returns string containing files used if there were more than 1, null otherwise
 
@@ -852,8 +854,7 @@ public class ProbModel implements Model
 	}
 
 	@Override
-	public void exportTransRewardsToFile(int r, int exportType, boolean ordered, File file, int precision) throws FileNotFoundException, PrismException
-	{
+	public void exportTransRewardsToFile(int r, int exportType, boolean ordered, File file, int precision) throws PrismException, FileNotFoundException {
 		if (!ordered) {
 			PrismMTBDD.ExportMatrix(transRewards[r], "C" + (r + 1), allDDRowVars, allDDColVars, odd, exportType, (file == null) ? null : file.getPath(), precision);
 		} else {
@@ -862,8 +863,7 @@ public class ProbModel implements Model
 	}
 
 	@Deprecated
-	public String exportTransRewardsToFile(int exportType, boolean explicit, File file, int precision) throws FileNotFoundException, PrismException
-	{
+	public String exportTransRewardsToFile(int exportType, boolean explicit, File file, int precision) throws PrismException, FileNotFoundException {
 		// export transition rewards matrix to a file
 		// returns string containing files used if there were more than 1, null otherwise
 

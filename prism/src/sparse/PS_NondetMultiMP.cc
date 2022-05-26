@@ -43,7 +43,7 @@
 #include <algorithm>
 
 //The following gives more output on stdout. In fact quite a lot of it, usable only for ~10 state examples 
-#define MORE_OUTPUT
+//#define MORE_OUTPUT
 
 //The following number is used to determine when to consider a number equal to 0.
 //Will be multiplied by minimal weights to make sure we don't do too much roundoffs for small weights
@@ -207,7 +207,8 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
 	
 		// Get index of single (first) initial state
 		start_index = get_index_of_first_from_bdd(ddman, start, rvars, num_rvars, odd);
-		
+		//Doesn't matter, because for communicating, aperiodic MDPs the expected mean-payoff is equal for every state
+		start_index = 0;
 		// initial solution
 		for (i = 0; i < n; i++) {
 			// combined value initialised to weighted sum of yes vectors (for unbounded probability objectives)
@@ -622,11 +623,15 @@ JNIEXPORT jdoubleArray __jlongpointer JNICALL Java_sparse_PrismSparse_PS_1Nondet
 		PS_PrintToMainLog(env, "] from initial state: %f\n", soln[start_index]/iters);
 		
 		//copy all computed elements
-		for (int it = 0; it < lenRew ; it++)
+		for (int it = 0; it < lenRew ; it++){
 			if (it != ignoredWeight){
+			    PS_PrintToMainLog(env, "Start index: %d\n", start_index);
+			    PS_PrintToMainLog(env, "Num states: %d\n", n);
+			    PS_PrintToMainLog(env, "Solution1: %f\n", psoln[it][start_index]);
+			    PS_PrintToMainLog(env, "Solution2: %f\n", psoln2[it][start_index]);
 				retNative[it] = psoln[it][start_index] - psoln2[it][start_index];
-				PS_PrintToMainLog(env, "] from initial state: %i \n", psoln[it][start_index] - psoln2[it][start_index]);
 			}
+		}
 		//compute the last element
 		if (ignoredWeight != -1) {
 			double last = soln[start_index]/iters;

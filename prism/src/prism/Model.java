@@ -208,12 +208,11 @@ public interface Model
 
 	void printTransInfo(PrismLog log, boolean extra);
 
-	default void exportToFile(int exportType, boolean explicit, File file) throws FileNotFoundException, PrismException
-	{
+	default void exportToFile(int exportType, boolean explicit, File file) throws PrismException, FileNotFoundException {
 		exportToFile(exportType, explicit, file, DEFAULT_EXPORT_MODEL_PRECISION);
 	}
 
-	void exportToFile(int exportType, boolean explicit, File file, int precision) throws FileNotFoundException, PrismException;
+	void exportToFile(int exportType, boolean explicit, File file, int precision) throws PrismException, FileNotFoundException;
 
 	/**
 	 * Export (non-zero) state rewards for one reward structure of the model.
@@ -221,8 +220,7 @@ public interface Model
 	 * @param exportType The format in which to export
 	 * @param file File to export to (if null, print to the log instead)
 	 */
-	default void exportStateRewardsToFile(int r, int exportType, File file) throws FileNotFoundException, PrismException
-	{
+	default void exportStateRewardsToFile(int r, int exportType, File file) throws PrismException, FileNotFoundException {
 		exportStateRewardsToFile(r, exportType, file, DEFAULT_EXPORT_MODEL_PRECISION);
 	}
 
@@ -233,16 +231,15 @@ public interface Model
 	 * @param file File to export to (if null, print to the log instead)
 	 * @param precision number of significant digits >= 1
 	 */
-	void exportStateRewardsToFile(int r, int exportType, File file, int precision) throws FileNotFoundException, PrismException;
+	void exportStateRewardsToFile(int r, int exportType, File file, int precision) throws PrismException, FileNotFoundException;
 
 	@Deprecated
-	default String exportStateRewardsToFile(int exportType, File file) throws FileNotFoundException, PrismException
-	{
+	default String exportStateRewardsToFile(int exportType, File file) throws PrismException, FileNotFoundException {
 		return exportStateRewardsToFile(exportType, file, DEFAULT_EXPORT_MODEL_PRECISION);
 	}
 
 	@Deprecated
-	String exportStateRewardsToFile(int exportType, File file, int precision) throws FileNotFoundException, PrismException;
+	String exportStateRewardsToFile(int exportType, File file, int precision) throws PrismException, FileNotFoundException;
 
 	/**
 	 * Export (non-zero) transition rewards for one reward structure of the model.
@@ -251,8 +248,7 @@ public interface Model
 	 * @param ordered Do the entries need to be printed in order?
 	 * @param file File to export to (if null, print to the log instead)
 	 */
-	default void exportTransRewardsToFile(int r, int exportType, boolean ordered, File file) throws FileNotFoundException, PrismException
-	{
+	default void exportTransRewardsToFile(int r, int exportType, boolean ordered, File file) throws PrismException, FileNotFoundException {
 		exportTransRewardsToFile(r, exportType, ordered, file, DEFAULT_EXPORT_MODEL_PRECISION);
 	}
 
@@ -264,16 +260,15 @@ public interface Model
 	 * @param file File to export to (if null, print to the log instead)
 	 * @param precision number of significant digits >= 1
 	 */
-	void exportTransRewardsToFile(int r, int exportType, boolean ordered, File file, int precision) throws FileNotFoundException, PrismException;
+	void exportTransRewardsToFile(int r, int exportType, boolean ordered, File file, int precision) throws PrismException, FileNotFoundException;
 
 	@Deprecated
-	default String exportTransRewardsToFile(int exportType, boolean explicit, File file) throws FileNotFoundException, PrismException
-	{
+	default String exportTransRewardsToFile(int exportType, boolean explicit, File file) throws PrismException, FileNotFoundException {
 		return exportTransRewardsToFile(exportType, explicit, file, DEFAULT_EXPORT_MODEL_PRECISION);
 	}
 
 	@Deprecated
-	String exportTransRewardsToFile(int exportType, boolean explicit, File file, int precision) throws FileNotFoundException, PrismException;
+	String exportTransRewardsToFile(int exportType, boolean explicit, File file, int precision) throws PrismException, FileNotFoundException;
 
 	void exportStates(int exportType, PrismLog log);
 

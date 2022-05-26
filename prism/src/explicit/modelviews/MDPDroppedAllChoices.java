@@ -191,6 +191,10 @@ public class MDPDroppedAllChoices extends MDPView
 		return model.getTransitionsIterator(state, choice);
 	}
 
+	@Override
+	public double getTransProb(int i, int choiceByAction, int successor) {
+		return 0;
+	}
 
 
 	//--- MDPView ---

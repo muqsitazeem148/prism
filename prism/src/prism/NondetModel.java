@@ -412,8 +412,7 @@ public class NondetModel extends ProbModel
 	// export transition matrix to a file
 
 	@Override
-	public void exportToFile(int exportType, boolean explicit, File file, int precision) throws FileNotFoundException, PrismException
-	{
+	public void exportToFile(int exportType, boolean explicit, File file, int precision) throws PrismException, FileNotFoundException {
 		if (!explicit) {
 			// can only do explicit (sparse matrix based) export for mdps
 		} else {
@@ -423,8 +422,7 @@ public class NondetModel extends ProbModel
 	}
 
 	@Override
-	public void exportTransRewardsToFile(int r, int exportType, boolean ordered, File file, int precision) throws FileNotFoundException, PrismException
-	{
+	public void exportTransRewardsToFile(int r, int exportType, boolean ordered, File file, int precision) throws PrismException, FileNotFoundException {
 		if (!ordered) {
 			// can only do explicit (sparse matrix based) export for mdps
 		} else {
@@ -433,8 +431,7 @@ public class NondetModel extends ProbModel
 	}
 
 	@Deprecated
-	public String exportTransRewardsToFile(int exportType, boolean explicit, File file, int precision) throws FileNotFoundException, PrismException
-	{
+	public String exportTransRewardsToFile(int exportType, boolean explicit, File file, int precision) throws PrismException, FileNotFoundException {
 		// export transition rewards matrix to a file
 		// returns string containing files used if there were more than 1, null otherwise
 

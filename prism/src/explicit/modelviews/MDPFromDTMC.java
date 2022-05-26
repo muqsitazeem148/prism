@@ -200,6 +200,10 @@ public class MDPFromDTMC extends MDPView
 		return transitions;
 	}
 
+	@Override
+	public double getTransProb(int i, int choiceByAction, int successor) {
+		return 0;
+	}
 
 
 	//--- MDPView ---

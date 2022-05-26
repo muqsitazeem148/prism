@@ -613,6 +613,11 @@ public class MDPSparse extends MDPExplicit
 	}
 
 	@Override
+	public double getTransProb(int i, int choiceByAction, int successor) {
+		return 0;
+	}
+
+	@Override
 	public void prob0step(BitSet subset, BitSet u, boolean forall, BitSet result)
 	{
 		int j, k, l1, h1, l2, h2;

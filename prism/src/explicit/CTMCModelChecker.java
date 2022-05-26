@@ -49,7 +49,12 @@ public class CTMCModelChecker extends ProbModelChecker
 	{
 		super(parent);
 	}
-	
+
+	@Override
+	protected StateValues checkExpressionMultiObjMEC(Model model, ExpressionFunc expr) throws PrismException {
+		return null;
+	}
+
 	// Model checking functions
 
 	@Override

@@ -244,7 +244,9 @@ public interface MDP extends MDPGeneric<Double>
 	 */
 	public Iterator<Entry<Integer, Double>> getTransitionsIterator(int s, int i);
 
-	/**
+    double getTransProb(int i, int choiceByAction, int successor);
+
+    /**
 	 * Functional interface for a consumer,
 	 * accepting transitions (s,t,d), i.e.,
 	 * from state s to state t with value d.

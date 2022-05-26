@@ -204,6 +204,11 @@ public class MDPAdditionalChoices extends MDPView
 		}
 	}
 
+	@Override
+	public double getTransProb(int i, int choiceByAction, int successor) {
+		return 0;
+	}
+
 	//--- MDPView ---
 
 	@Override

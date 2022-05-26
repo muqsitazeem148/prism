@@ -204,6 +204,10 @@ public class MDPDroppedChoicesCached extends MDPView
 		return model.getTransitionsIterator(state, originalChoice);
 	}
 
+	@Override
+	public double getTransProb(int i, int choiceByAction, int successor) {
+		return 0;
+	}
 
 
 	//--- MDPView ---

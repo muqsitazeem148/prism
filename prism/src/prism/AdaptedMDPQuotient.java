@@ -35,7 +35,7 @@ import jdd.SanityJDD;
 import java.util.List;
 
 /**
- * Transformation for obtaining the quotient MDP for an MDP, given an
+ * Transformation for obtaining the adapted quotient MDP for an MDP, given an
  * equivalence relation.
  * <br>
  * Given a list of equivalent classes (have to be disjoint, but don't need
@@ -135,13 +135,13 @@ public class AdaptedMDPQuotient implements ModelTransformation<NondetModel,Nonde
 	 *
 	 * <br>[ REFs: <i>result</i>, DEREFs: restrict ]
 	 */
-	public static AdaptedMDPQuotient mecQuotient(PrismComponent parent, final NondetModel model, JDDNode restrict, JDDNode statesOfInterest) throws PrismException
+	public static AdaptedMDPQuotient mecQuotient(PrismComponent parent, final NondetModel model, JDDNode restrict, JDDNode statesOfInterest, List<TileList> solutions) throws PrismException
 	{
 		ECComputer ec = ECComputer.createECComputer(parent, model);
 		ec.computeMECStates(restrict);
 		JDD.Deref(restrict);
 
-		return transform(parent, model, ec.getMECStates(), statesOfInterest);
+		return transform(parent, model, ec.getMECStates(), statesOfInterest, solutions);
 	}
 
 
@@ -150,10 +150,10 @@ public class AdaptedMDPQuotient implements ModelTransformation<NondetModel,Nonde
 	 *
 	 * <br>[ REFs: <i>result</i>, DEREFs: equivalenceClasses, statesOfInterest ]
 	 */
-	public static AdaptedMDPQuotient transform(PrismComponent parent, final NondetModel model, List<JDDNode> equivalentClasses, JDDNode statesOfInterest)
+	public static AdaptedMDPQuotient transform(PrismComponent parent, final NondetModel model, List<JDDNode> equivalentClasses, JDDNode statesOfInterest, List<TileList> solutions)
 			throws PrismException
 	{
-		final MDPQuotientOperator transform = new MDPQuotientOperator(parent, model, equivalentClasses);
+		final MDPQuotientOperator transform = new MDPQuotientOperator(parent, model, equivalentClasses, solutions);
 		final JDDNode transformedStatesOfInterest = transform.mapStateSet(statesOfInterest);
 
 		final NondetModel quotient = model.getTransformed(transform);
@@ -165,6 +165,9 @@ public class AdaptedMDPQuotient implements ModelTransformation<NondetModel,Nonde
 	public static class MDPQuotientOperator extends NondetModelTransformationOperator {
 		/** the list of equivalence classes */
 		private List<JDDNode> equivalentClasses;
+
+		/** The list of paretoSets computed for every end component*/
+		private List<TileList> solutions;
 
 		/**
 		 * A symbolic mapping (0/1-ADD) from states (row vars) to their representative (col vars)
@@ -210,16 +213,19 @@ public class AdaptedMDPQuotient implements ModelTransformation<NondetModel,Nonde
 		private boolean verbose = false;
 
 		/** Constructor */
-		public MDPQuotientOperator(PrismComponent parent, NondetModel model, List<JDDNode> equivalentClasses)
+		public MDPQuotientOperator(PrismComponent parent, NondetModel model, List<JDDNode> equivalentClasses, List<TileList> solutions)
 		{
 			super(model);
 
+			this.solutions = solutions;
 			this.equivalentClasses = equivalentClasses;
 			this.parent = parent;
 
 			map = JDD.Constant(0);
 			inEC = JDD.Constant(0);
 			stateActionsInsideECs = JDD.Constant(0);
+
+
 
 			for (JDDNode ec : equivalentClasses) {
 				// determine representative for the EC
@@ -366,7 +372,17 @@ public class AdaptedMDPQuotient implements ModelTransformation<NondetModel,Nonde
 			if (verbose) JDD.PrintMinterms(parent.getLog(), trans.copy(), "trans (after collapsing target states)");
 
 			newTrans = JDD.Constant(0);
+
+
+			//Add new goal state
+			ModelVariablesDD variables = originalModel.getModelVariables();
+			JDDNode goalState = variables.allocateExtraStateVariable("sgoal");
+
+
+
 			if (verbose) parent.mainLog.println("\nCollapsing from states");
+			int i = 0;
+			JDDNode transToGoal = JDD.Constant(0);
 			for (JDDNode ec : equivalentClasses) {
 				if (verbose) JDD.PrintMinterms(parent.getLog(), ec.copy(), "EC");
 
@@ -424,6 +440,23 @@ public class AdaptedMDPQuotient implements ModelTransformation<NondetModel,Nonde
 				if (verbose) JDD.PrintMinterms(parent.getLog(), newTrans.copy(), "newTrans");
 
 				JDD.Deref(representative, representativeCol);
+
+
+
+
+				//TODO for every ec add transitions to sgoal with prob 1
+
+				List<Point> paretoSet = solutions.get(i).getPoints();
+				for (Point p : paretoSet){
+					JDDNode addedTrans = JDD.Apply(JDD.TIMES, representative.copy(), JDD.PermuteVariables(goalState.copy(), originalModel.getAllDDRowVars().copy() , originalModel.getAllDDColVars().copy()));
+					addedTrans = JDD.Apply(JDD.TIMES, addedTrans, JDD.SetVectorElement(JDD.Constant(0), originalModel.getAllDDChoiceVars().copy(),  i, 1));
+					JDD.PrintMinterms(parent.getLog(), addedTrans, "Added Transition");
+
+					transToGoal = JDD.Or(transToGoal, addedTrans );
+					//transToGoal = JDD.Apply(JDD.PLUS, trans, JDD.Apply(JDD.TIMES, JDD.Constant(1), addedTrans.copy()));
+					i++;
+				}
+				JDD.PrintMinterms(parent.getLog(), transToGoal, "All Added Transitions" );
 			}
 
 			JDDNode transUntouched = JDD.Times(trans.copy(), notInEC.copy());
@@ -433,7 +466,13 @@ public class AdaptedMDPQuotient implements ModelTransformation<NondetModel,Nonde
 			newTrans = JDD.Apply(JDD.MAX, newTrans, transUntouched);
 			if (verbose) JDD.PrintMinterms(parent.getLog(), newTrans.copy(), "newTrans");
 
+			newTrans = JDD.Or(newTrans, transToGoal);
+			//newTrans = JDD.Max(newTrans, transToGoal);
 			newTrans01 = JDD.GreaterThan(newTrans.copy(), 0);
+
+			JDD.PrintMinterms(parent.getLog() , newTrans.copy() , "Transisitons MEC Quotient");
+			JDD.PrintMinterms(parent.getLog() , newTrans01.copy() , "Transisitons MEC Quotient");
+
 
 			JDD.Deref(trans);
 

@@ -2,20 +2,39 @@ mdp
 
 module a
 
-x: [0..1];
+x: [1..6];
 	 
-	[a] x=0 -> 1.0:(x'=1);
-	[a] x=1 -> 1.0:(x'=0);
-	[b] x=1 -> 1.0:(x'=1);
+	[a12] x=1 -> 1.0:(x'=2);
+	[a15] x=1 -> 1.0:(x'=5);
+	[a13] x=1 -> 0.7:(x'=3) + 0.3:(x'=4);
+	[a23] x=2 -> 1.0:(x'=3);
+	[a34] x=3 -> 1.0:(x'=4);
+	[a33] x=3 -> 1.0:(x'=3);
+	[a43] x=4 -> 1.0:(x'=3);
+	[a54] x=5 -> 1.0:(x'=4);
+	[a55] x=5 -> 0.5:(x'=5) + 0.5:(x'=6);
+	[a65] x=6 -> 1.0:(x'=5);
 
 endmodule
 
 rewards "rewards1"
-	[a] true : 2;
-	[b] true : 1;
+	[a13] true : 2;
+	[a23] true : 2;
+	[a33] true : 1;
+	[a34] true : 2;
+	[a43] true : 2;
+	[a54] true : 3;
+	[a55] true : 2;
+	[a65] true : 2;
 endrewards
 
 
 rewards "rewards2"
-    [b] true : 3;
+    [a12] true : 2;
+    [a15] true : 2;
+    [a23] true : 2;
+    [a33] true : 3;
+   	[a54] true : 1;
+   	[a55] true : 2;
+   	[a65] true : 2;
 endrewards

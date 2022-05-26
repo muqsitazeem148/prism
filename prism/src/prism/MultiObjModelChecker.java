@@ -28,8 +28,10 @@
 
 package prism;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -39,6 +41,7 @@ import java.util.Vector;
 import jdd.JDD;
 import jdd.JDDNode;
 import jdd.JDDVars;
+import jdd.JDDVectorConsumer;
 import mtbdd.PrismMTBDD;
 import parser.ast.Expression;
 import parser.ast.RelOp;
@@ -740,7 +743,7 @@ public class MultiObjModelChecker extends PrismComponent
 		if (numNumericalObjectives >= 2) {
 			if (isMP) {
 
-				return generateParetoMEC(modelProduct, yes_ones, maybe, start, targets, rewards, opsAndBounds);
+				return generateParetoMP(modelProduct, yes_ones, maybe, start, targets, rewards, opsAndBounds);
 			}
 			else {
 				return generateParetoCurve(modelProduct, yes_ones, maybe, start, targets, rewards, opsAndBounds);
@@ -751,9 +754,24 @@ public class MultiObjModelChecker extends PrismComponent
 	}
 
 	protected TileList generateParetoMP(NondetModel modelProduct, JDDNode yes_ones, JDDNode maybe, final JDDNode st, JDDNode[] targets,
-										 List<JDDNode> rewards, OpsAndBoundsList opsAndBounds) throws PrismException
-	{
+										 List<JDDNode> rewards, OpsAndBoundsList opsAndBounds) throws PrismException {
 		//TODO
+
+		boolean export = true;
+
+		if (export){
+			try {
+				File iexport = new File("old_rews" + ".prism");
+				File iexport2 = new File("old_rews2" + ".prism");
+				File imdp = new File("old_mdpexport" + ".prism");
+				modelProduct.exportTransRewardsToFile(0, 2, true, iexport);
+				modelProduct.exportTransRewardsToFile(1, 2, true, iexport2);
+				modelProduct.exportToFile(2, true, imdp);
+			} catch (FileNotFoundException e) {
+			}
+		}
+
+		//JDD.PrintMinterms(mainLog, modelProduct.getTransActions());
 
 		if (modelProduct.getNumStartStates() > 1) {
 			throw new UnsupportedOperationException("Can't run MP with multiple initial states.");
@@ -772,31 +790,58 @@ public class MultiObjModelChecker extends PrismComponent
 		mecComputer.computeMECStates();
 		List<JDDNode> mecs = mecComputer.getMECStates();
 
+		int k = 0;
 		//Perform local value iteration on every MEC
 		for (JDDNode m : mecs){
-			JDDNode trans = mecComputer.getStableTransitions(m);
-			restrict = MDPRestricted.transform(this, modelProduct, m, trans);
+			k++;
+			restrict = MDPRestricted.transform(this, modelProduct, m.copy());
 			MECrestricted = restrict.getTransformedModel();
-			JDDNode yesInQuotient = transform.mapStateSetToQuotient(yes_ones.copy());
-			JDDNode maybeInQuotient = transform.mapStateSetToQuotient(maybe.copy());
-			solutions.add(generateParetoMEC(MECrestricted, yesInQuotient, maybeInQuotient , MECrestricted.getStart(), targets, (List<JDDNode>) MECrestricted.getTransRewards(), opsAndBounds));
+			JDDNode yesInQuotient = restrict.mapStateSetToQuotient(yes_ones.copy());
+			JDDNode maybeInQuotient = restrict.mapStateSetToQuotient(maybe.copy());
+
+			if(export) {
+				try {
+					File rews = new File("rews"  + k + "_1.prism");
+					File rews2 = new File("rews" + k + "_2.prism");
+					File mdp = new File("mec" + k + ".prism");
+					MECrestricted.exportTransRewardsToFile(0, 2, true, rews);
+					MECrestricted.exportTransRewardsToFile(1, 2, true, rews2);
+					MECrestricted.exportToFile(2, true, mdp);
+				} catch (FileNotFoundException e) {
+
+				}
+			}
+
+			solutions.add(generateParetoMEC(MECrestricted, yesInQuotient, maybeInQuotient , restrict.mapStateSetToQuotient(st), targets, MECrestricted.getTransRewardsList(), opsAndBounds));
 		}
 
 		//Print out the respective solutions for each MEC
+		int i = 0;
 		for (TileList solution : solutions){
-			System.out.println(solution.toString());
+			i++;
+			mainLog.println("Computed solution for MEC " + i + ": " + solution.toString());
+		}
+
+		//Build the adapted MEC quotient
+		transform = AdaptedMDPQuotient.transform(this, modelProduct, mecs, modelProduct.getReach().copy(), solutions);
+		transformed = transform.getTransformedModel();
+
+		if (export){
+			try {
+				File qiexport = new File("old_rews" + ".prism");
+				File qiexport2 = new File("old_rews2" + ".prism");
+				File quotient = new File("mdpquotient" + ".prism");
+				modelProduct.exportTransRewardsToFile(0, 2, true, qiexport);
+				modelProduct.exportTransRewardsToFile(1, 2, true, qiexport2);
+				transformed.exportToFile(2, true, quotient);
+			} catch (FileNotFoundException e) {
+			}
 		}
 
 
-		//Build the adapted MEC quotient
-		transform = AdaptedMDPQuotient.transform(this, modelProduct, mecs, modelProduct.getReach().copy());
-		transformed = transform.getTransformedModel();
-
-		List<JDDNode> newRewards = rewards;
-
 
 		//Perform multi-objective weighted value iteration on the adapted MEC quotient and return the result
-		return (TileList) weightedMultiReachProbs(transformed, yes_ones, maybe, transformed.getStart() , null, newRewards, opsAndBounds, false);
+		return (TileList) weightedMultiReachProbs(transformed, yes_ones, maybe, transformed.getStart() , targets, transformed.getTransRewardsList(), opsAndBounds, false);
 
 	}
 
@@ -907,14 +952,10 @@ public class MultiObjModelChecker extends PrismComponent
 					PrismNative.setExportAdvFilename(PrismUtils.addCounterSuffixToFilename(advFileName, ++advCounter));
 				}
 				mainLog.println("Optimising weighted sum for reward objective " + (i + 1) + "/" + dimReward + ": weights " + direction);
-				if (useGS) {
-					result = PrismSparse.NondetMultiObjGS(modelProduct.getODD(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(),
-							modelProduct.getAllDDNondetVars(), false, st, adversary, trans_matrix, probDoubleVectors, rewSparseMatrices, direction.getCoords());
-				} else {
-					result = PrismSparse.NondetMultiMP(modelProduct.getODD(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(),
+
+				result = PrismSparse.NondetMultiMP(modelProduct.getODD(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(),
 							modelProduct.getAllDDNondetVars(), false, st, adversary, trans_matrix, modelProduct.getSynchs(), probDoubleVectors, probStepBounds,
 							rewSparseMatrices, direction.getCoords(), rewardStepBounds);
-				}
 			} catch (PrismException e) {
 				// If anything went wrong (in particular, non-convergence of the computation), use another direction
 				mainLog.println("Ignoring the last multi-objective computation since it did not complete successfully");
@@ -925,14 +966,9 @@ public class MultiObjModelChecker extends PrismComponent
 				}
 				direction = direction.normalize();
 				mainLog.println("Optimising weighted sum for reward objective " + (i + 1) + "/" + dimReward + ": weights " + direction);
-				if (useGS) {
-					result = PrismSparse.NondetMultiObjGS(modelProduct.getODD(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(),
-							modelProduct.getAllDDNondetVars(), false, st, adversary, trans_matrix, probDoubleVectors, rewSparseMatrices, direction.getCoords());
-				} else {
-					result = PrismSparse.NondetMultiMP(modelProduct.getODD(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(),
+				result = PrismSparse.NondetMultiMP(modelProduct.getODD(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(),
 							modelProduct.getAllDDNondetVars(), false, st, adversary, trans_matrix, modelProduct.getSynchs(), probDoubleVectors, probStepBounds,
 							rewSparseMatrices, direction.getCoords(), rewardStepBounds);
-				}
 			}
 
 			numberOfPoints++;
@@ -968,22 +1004,9 @@ public class MultiObjModelChecker extends PrismComponent
 				PrismNative.setExportAdvFilename(PrismUtils.addCounterSuffixToFilename(advFileName, ++advCounter));
 			}
 			mainLog.println("Optimising weighted sum of objectives: weights " + direction);
-			double[] result;
-			if (useGS) {
-				result = PrismSparse.NondetMultiObjGS(modelProduct.getODD(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(),
-						modelProduct.getAllDDNondetVars(), false, st, adversary, trans_matrix, probDoubleVectors, rewSparseMatrices, direction.getCoords());
-			} else {
-				result = PrismSparse.NondetMultiMP(modelProduct.getODD(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(),
+			double[] result = PrismSparse.NondetMultiMP(modelProduct.getODD(), modelProduct.getAllDDRowVars(), modelProduct.getAllDDColVars(),
 						modelProduct.getAllDDNondetVars(), false, st, adversary, trans_matrix, modelProduct.getSynchs(), probDoubleVectors, probStepBounds,
 						rewSparseMatrices, direction.getCoords(), rewardStepBounds);
-			}
-
-			/*	//Minimizing operators are negated, and for Pareto we need to maximize.
-				for (int i = 0; i < dimProb; i++) {
-					if (opsAndBounds.getOperator(i) == Operator.P_MIN) {
-						result[i] = -(1-result[i]);
-					}
-				} */
 
 			numberOfPoints++;
 

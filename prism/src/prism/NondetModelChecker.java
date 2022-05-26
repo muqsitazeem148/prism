@@ -223,6 +223,10 @@ public class NondetModelChecker extends NonProbModelChecker
 		}
 		// Anything else is treated as multi-objective 
 		else {
+
+
+
+
 			return checkExpressionMultiObjective(exprs, forAll, statesOfInterest);
 		}
 	}
@@ -467,7 +471,8 @@ public class NondetModelChecker extends NonProbModelChecker
 		}
 		return checkExpressionMultiObjective(exprs, statesOfInterest);
 	}
-	
+
+
 	/**
 	 * Model check a multi-objective expression and return the result.
 	 * For multi-objective queries, we only find the value for one state.
