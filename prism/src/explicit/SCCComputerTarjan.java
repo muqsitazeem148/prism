@@ -128,6 +128,7 @@ public class SCCComputerTarjan extends SCCComputer
 			Node n = nodeList.get(e);
 			if (n.index == -1) {
 				tarjan(e);
+
 				v.lowlink = Math.min(v.lowlink, n.lowlink);
 			} else if (onStack.get(e)) {
 				v.lowlink = Math.min(v.lowlink, n.index);

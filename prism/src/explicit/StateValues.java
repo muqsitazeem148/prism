@@ -143,6 +143,7 @@ public class StateValues implements StateVector, Iterable<Object>
 		type = null;
 		size = 0;
 		valuesB = null;
+		valuesD = null;
 		valuesO = null;
 	}
 
@@ -188,7 +189,8 @@ public class StateValues implements StateVector, Iterable<Object>
 		this.size = model.getNumStates();
 		this.statesList = model.getStatesList();
 		this.valuesB = null;
-		this.valuesO = null;
+		this.valuesO = new Object[size];
+		this.valuesD = new double[size];
 	}
 
 	/**
@@ -231,7 +233,14 @@ public class StateValues implements StateVector, Iterable<Object>
 			} else {
 				valuesB = new BitSet();
 			}
-		} else {
+		}
+		else if (type instanceof TypeDouble){
+			for (int i = 0; i < size; i++) {
+				valuesD[i] = (double) value;
+			}
+		}
+
+		else {
 			for (int i = 0; i < size; i++) {
 				valuesO[i] = value;
 			}
@@ -248,7 +257,14 @@ public class StateValues implements StateVector, Iterable<Object>
 			if (valuesB == null) {
 				valuesB = new BitSet();
 			}
-		} else {
+		}
+		else if (typeNew instanceof TypeDouble) {
+			if (valuesD == null) {
+				valuesD = new double[size];
+			}
+		}
+
+		else {
 			if (valuesO == null) {
 				valuesO = new Object[size];
 			}
@@ -688,6 +704,9 @@ public class StateValues implements StateVector, Iterable<Object>
 	{
 		if (type instanceof TypeBool) {
 			return valuesB.get(i);
+		}
+		else if (type instanceof TypeDouble) {
+			return valuesD[i];
 		} else {
 			return valuesO[i];
 		}

@@ -1,0 +1,1 @@
+multi(R{"rewards1"}max=? [S], R{"rewards2"}>=5 [S])

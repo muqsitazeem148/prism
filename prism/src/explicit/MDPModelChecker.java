@@ -40,6 +40,7 @@ import explicit.modelviews.EquivalenceRelationInteger;
 import explicit.modelviews.MDPDroppedAllChoices;
 import explicit.modelviews.MDPEquiv;
 import explicit.rewards.*;
+import parser.State;
 import parser.ast.*;
 import parser.type.TypeDouble;
 import parser.type.TypeVoid;
@@ -167,12 +168,15 @@ public class MDPModelChecker extends ProbModelChecker
 			}
 		}
 
-		List<StateValues> sols = new ArrayList<>();
+		//List<StateValues> sols = new ArrayList<>();
+		HashMap<Integer, StateValues> sols = new HashMap<>();
 
 		//Compute MECs of the given MDP
 		ECComputer ecc = ECComputerDefault.createECComputer(null, (MDP) model);
 		ecc.computeMECStates();
 		List<BitSet> mecs = ecc.getMECStates();
+
+		mainLog.println("Number of MECs: "+mecs.size() );
 
 		//Perform LP optimization on every discovered MEC, store the respective solutions in sols.
 		//Therefore we have to construct the MEC-restricted MDP for every MEC
@@ -218,16 +222,12 @@ public class MDPModelChecker extends ProbModelChecker
 				}
 			}
 
-			List<MDPRewards> temp = new ArrayList<MDPRewards>(rewards);
-			rewards = (ArrayList<MDPRewards>) newRewards;
-			MDP currentMEC = new MDPSparse( (MDP) model, states, availableActions );  //MEC-restricted MDP
 
+			MDP currentMEC = new MDPSparse( (MDP) model, states, availableActions ); //MEC-restricted MDP
 			//Compute solution for MEC using Multigains LP-optimization
 			StateValues sol = checkExpressionMultiObjective(currentMEC, expr);
-			mainLog.println("Solution for MEC " + mecNum + ": " + sol.toString());
-			sols.add(sol);
-
-			rewards = (ArrayList<MDPRewards>) temp;
+			//mainLog.println("Solution for MEC " + mecNum + ": " + sol.getValue(0).toString());
+			sols.put(mec.nextSetBit(0), sol);
 			mecNum++;
 		}
 
@@ -238,8 +238,13 @@ public class MDPModelChecker extends ProbModelChecker
 		EquivalenceRelationInteger eq = new EquivalenceRelationInteger(mecs);
 		BasicModelTransformation<MDP, MDPEquiv> quotientTransform = MDPEquiv.transformDroppingLoops((MDP) model, eq);
 		MDPEquiv quotient = quotientTransform.getTransformedModel();
-		MDP quotientModel = new MDPSparse(quotient);
-		MDPSimple quotientModelSimple = new MDPSimple(quotientModel);
+		MDPSimple quotientModelSimple = new MDPSimple(quotient);
+
+
+		//If initial state is part of a MEC and is not the representative, change initial state to the representative of the MEC
+		if (! eq.isRepresentative(quotientModelSimple.getFirstInitialState())){
+			quotientModelSimple.setInitialState(eq.getRepresentative(quotientModelSimple.getFirstInitialState()));
+		}
 
 		//add new goal State and transitions to goal state + create new reward structures
 		//and use the previously computed solutions as rewards for the new transitions to sgoal
@@ -255,12 +260,12 @@ public class MDPModelChecker extends ProbModelChecker
 		mecNum = 0;
 		for (int i = 0; i < quotientModelSimple.numStates ; i++) {
 			int numChoicesOld = quotientModelSimple.getNumChoices(i);
-			if (eq.isRepresentative(i) && eq.getEquivalenceClassOrNull(i) != null) {
-				for (int z = 0; z < sols.get(mecNum).getSize(); z++){
+			if (sols.containsKey(i)) {
+				for (int z = 0; z < ((TileList) sols.get(i).getValue(0)).getPoints().size(); z++){
 					for (int j = 0; j < newRewards.size() ; j++) {
 						String action = "a" + i + "->goal" + ":" +z;
 						quotientModelSimple.addActionLabelledChoice(i, distr, action);
-						((MDPRewardsSimple) newRewards.get(j)).setTransitionReward(i, z + numChoicesOld, ((TileList) sols.get(mecNum).getValue(0)).getPoints().get(z).getCoord(j));
+						((MDPRewardsSimple) newRewards.get(j)).setTransitionReward(i, z + numChoicesOld, ((TileList) sols.get(i).getValue(0)).getPoints().get(z).getCoord(j));
 					}
 				}
 			mecNum++;
@@ -268,6 +273,8 @@ public class MDPModelChecker extends ProbModelChecker
 		}
 
 		rewards = (ArrayList<MDPRewards>) newRewards;
+
+
 
 		//Run Weigthed Value iteration on final adapted MDP-quotient and return the result
 		return checkExpressionQuotient(quotientModelSimple, rewards, expr);
@@ -277,8 +284,9 @@ public class MDPModelChecker extends ProbModelChecker
 	 * This currently only supports maximizing 2 rewards.
 	 */
 	private StateValues checkExpressionQuotient(MDP quotientModel, List<MDPRewards> rewards, ExpressionFunc expr) throws PrismException {
-
-		WeightedVI weightedVI = new WeightedVI(quotientModel, rewards, maxIters);
+		//verbose=false;
+		double term_crit_param = settings.getDouble(PrismSettings.PRISM_TERM_CRIT_PARAM);
+		WeightedVI weightedVI = new WeightedVI(quotientModel, rewards, maxIters, term_crit_param);
 
 		//Run weigthed value iteration with initial weights (1,0) and (0,1)
 		ArrayList<Point> computedPoints = new ArrayList<Point>();
@@ -291,7 +299,7 @@ public class MDPModelChecker extends ProbModelChecker
 		//mainLog.println("p2 " + p2);
 
 		int numberOfPoints = 2;
-		boolean verbose = true;
+		boolean verbose = false;
 
 		Tile initialTile = new Tile(pointsForInitialTile);
 		TileList tileList = new TileList(initialTile, null, 10e-3);
@@ -301,7 +309,6 @@ public class MDPModelChecker extends ProbModelChecker
 		if (verbose) {
 			mainLog.println("The initial direction is " + direction);
 		}
-
 		//Find new weights and add points to the pareto set until no new weights can be found.
 		boolean decided = false;
 		int iters = 0;
@@ -463,9 +470,10 @@ public class MDPModelChecker extends ProbModelChecker
 		MultiLongRun mlr = new MultiLongRun((MDP) model, rewards, operators, bounds, method);
 		StateValues sv = null;
 		mlr.createMultiLongRunLP(memoryless);
-		if (numericalCount > 0 && memoryless)
+		if (numericalCount > 0 && memoryless) {
 			throw new PrismException("mlessmulti can only be used for non-numerical queries" +
 					" (optimal memoryless strategies might not exist, and so max/min would not apply)");
+		}
 		else if (numericalCount == 0 && memoryless) {
 			sv = mlr.solveMemoryless();
 			//if (generateStrategy)

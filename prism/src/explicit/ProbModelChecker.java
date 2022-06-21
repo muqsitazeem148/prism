@@ -52,6 +52,7 @@ import prism.PrismSettings;
 import prism.PrismUtils;
 
 import static prism.PrismSettings.DEFAULT_EXPORT_MODEL_PRECISION;
+import static prism.PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD;
 
 /**
  * Super class for explicit-state probabilistic model checkers.
@@ -78,7 +79,6 @@ public abstract class ProbModelChecker extends NonProbModelChecker
 	protected boolean prob0 = true;
 	protected boolean prob1 = true;
 
-	protected boolean useMECDecomp = true;
 	// should we suppress log output during precomputations?
 	protected boolean silentPrecomputations = false;
 	// Use predecessor relation? (e.g. for precomputation)
@@ -129,7 +129,7 @@ public abstract class ProbModelChecker extends NonProbModelChecker
 
 	// Method used for solving MDPs
 	public enum MDPSolnMethod {
-		VALUE_ITERATION, GAUSS_SEIDEL, POLICY_ITERATION, MODIFIED_POLICY_ITERATION, LINEAR_PROGRAMMING;
+		VALUE_ITERATION, GAUSS_SEIDEL, POLICY_ITERATION, MODIFIED_POLICY_ITERATION, LINEAR_PROGRAMMING, MEC_DECOMP;
 		public String fullName()
 		{
 			switch (this) {
@@ -143,6 +143,8 @@ public abstract class ProbModelChecker extends NonProbModelChecker
 				return "Modified policy iteration";
 			case LINEAR_PROGRAMMING:
 				return "Linear programming";
+			case MEC_DECOMP:
+				return "MEC decomposition";
 			default:
 				return this.toString();
 			}
@@ -205,6 +207,8 @@ public abstract class ProbModelChecker extends NonProbModelChecker
 				setMDPSolnMethod(MDPSolnMethod.MODIFIED_POLICY_ITERATION);
 			} else if (s.equals("Linear programming")) {
 				setMDPSolnMethod(MDPSolnMethod.LINEAR_PROGRAMMING);
+			} else if (s.equals("MEC decomposition")) {
+				setMDPSolnMethod(MDPSolnMethod.MEC_DECOMP);
 			} else {
 				throw new PrismNotSupportedException("Explicit engine does not support MDP solution method \"" + s + "\"");
 			}
@@ -529,8 +533,8 @@ public abstract class ProbModelChecker extends NonProbModelChecker
 		else if (expr instanceof ExpressionFunc
 				&& (((ExpressionFunc) expr).getName().equals("multi") || ((ExpressionFunc) expr).getName().equals("mlessmulti"))) {
 
-				if (useMECDecomp){
-					res = checkExpressionMultiObjMEC(model, (ExpressionFunc) expr);
+				if (settings.getString(PRISM_MDP_MULTI_SOLN_METHOD) == "MEC decomposition"){
+				res = checkExpressionMultiObjMEC(model, (ExpressionFunc) expr);
 				}
 				else
 					res = checkExpressionMultiObjective(model, (ExpressionFunc) expr);

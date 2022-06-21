@@ -16,23 +16,26 @@ public class WeightedVI {
     private int numObj = 2;
 
     private double zero_roundoff = 10e-11;
+    private double term_crit_param;
 
     //currently only maximizing objectives are supported
     private boolean min = false;
 
-    public WeightedVI(MDP model, List<MDPRewards> rewards, int maxIters) {
+    public WeightedVI(MDP model, List<MDPRewards> rewards, int maxIters, double term_crit_param) {
         this.model = model;
         this.rewards = rewards;
         this.n = model.getNumStates();
         this.maxIters = maxIters;
         start_index = model.getFirstInitialState();
+        this.term_crit_param = term_crit_param;
     }
 
     public WeightedVI(MDP model, List<MDPRewards> rewards) {
         this.model = model;
         this.rewards = rewards;
         this.n = model.getNumStates();
-        this.maxIters = 1000;
+        this.maxIters = 10000;
+        this.term_crit_param = 1e-8;
         start_index = model.getFirstInitialState();
     }
 
@@ -78,7 +81,7 @@ public class WeightedVI {
 
         //Start of the actual value iteration
         int iters = 0;
-        boolean done =false, weightedDone = false , first , doneBeforeBounded = false;
+        boolean done =false, weightedDone = false , first ;
         double d1,d2;
 
         while (!done && iters < maxIters) {
@@ -95,8 +98,8 @@ public class WeightedVI {
 
 
                 // loop through all choices
-                for (Object action : model.getAvailableActions(i)){
-                    int choice = model.getChoiceByAction(i,action);
+                int numChoices = model.getNumChoices(i);
+                for (int choice = 0; choice< model.getNumChoices(i); choice++){
                     // compute, for state i for this iteration,
                     // the combined and individual reward values
                     d2 = 0;
@@ -159,8 +162,8 @@ public class WeightedVI {
             }
             for (int it = 0; it < numObj; it++) {
                 for (int o = 0; o < n; o++) {
-                    if (Math.abs(psoln[it][o]) < near_zero) psoln[it][o] = 0;
-                    if (Math.abs(psoln2[it][o]) < near_zero) psoln2[it][o] = 0;
+                   if (Math.abs(psoln[it][o]) < near_zero) psoln[it][o] = 0;
+                   if (Math.abs(psoln2[it][o]) < near_zero) psoln2[it][o] = 0;
                 }
             }
 
@@ -168,25 +171,24 @@ public class WeightedVI {
             if (!weightedDone) {
                 weightedDone = true;
                 for (int i = 0; i < n; i++) {
-                    if (Math.abs(soln2[i] - soln[i]) / Math.abs(soln2[i]) > 0.00000001) {
+                    if (Math.abs(soln2[i] - soln[i])  > term_crit_param) {
                         weightedDone = false;
                         break;
                     }
                 }
-            } else if (!doneBeforeBounded) {
+            } else if (!done) {
                 done = true;
-                doneBeforeBounded = true;
                 outer:
                 for (int i = 0; i < n; i++) {
                     for (int it = 0; it < numObj; it++) {
-                        if (Math.abs(psoln2[it][i] - psoln[it][i]) / Math.abs(psoln2[it][i]) > 0.00000001) {
+                        if (Math.abs(psoln2[it][i] - psoln[it][i])  > term_crit_param) {
                             done = false;
-                            doneBeforeBounded = false;
                             break outer;
                         }
                     }
                 }
             }
+
 
             // prepare for next iteration
             tmpsoln = soln;

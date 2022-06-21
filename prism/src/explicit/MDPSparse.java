@@ -313,12 +313,12 @@ public class MDPSparse extends MDPExplicit
 	public MDPSparse(MDP mdp, List<Integer> states, List<List<Integer>> actions)
 	{
 		initialise(states.size());
-		for (int in : mdp.getInitialStates()) {
-			addInitialState(in);
-		}
-		for (int dl : mdp.getDeadlockStates()) {
-			addDeadlockState(dl);
-		}
+		//for (int in : mdp.getInitialStates()) {
+		//	addInitialState(in);
+		//}
+		//for (int dl : mdp.getDeadlockStates()) {
+		//	addDeadlockState(dl);
+		//}
 		statesList = new ArrayList<State>();
 		for (int s : states) {
 			statesList.add(mdp.getStatesList().get(s));
@@ -326,6 +326,7 @@ public class MDPSparse extends MDPExplicit
 		numDistrs = 0;
 		numTransitions = 0;
 		maxNumDistrs = 0;
+		addInitialState(0);
 		for (int i = 0; i < states.size(); i++) {
 			int s = states.get(i);
 			final int numChoices = actions.get(s).size();

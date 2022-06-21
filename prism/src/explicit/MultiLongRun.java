@@ -121,7 +121,7 @@ public class MultiLongRun {
 	private void initialiseSolver(boolean memoryless) throws PrismException
 	{
 		try { //below Class.forName throws exception if the required jar is not present
-			if (method.equals("Linear programming")) {
+			if (method.equals("Linear programming") || method.equals("MEC decomposition")) {
 				//create new solver
 				solver = new LpSolverProxy(this.numRealLPVars, this.numBinaryLPVars);
 			} else if (method.equals("Gurobi")) {
@@ -963,14 +963,14 @@ public class MultiLongRun {
 		}
 		
 		solver.setObjFunct(weightedMap, true);
-		
 		int r = solver.solve();
 		double[] resultVars = solver.getVariableValues();
 		
 		Point p = new Point(2);
 		
-		if (r == lpsolve.LpSolve.INFEASIBLE) {//TODO other results
-			throw new PrismException("TODO");
+		if (r == lpsolve.LpSolve.INFEASIBLE) {
+			//return new Point(new double[] {0,0});//TODO other results
+			throw new PrismException("Infeasible");
 		} else if (r == lpsolve.LpSolve.OPTIMAL) {
 			new Point(2);
 			

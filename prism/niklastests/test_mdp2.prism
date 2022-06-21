@@ -1,0 +1,30 @@
+mdp
+
+module a
+
+x: [0..6];
+	 
+
+	[a] x=5 -> 0.4:(x'=5) + 0.6:(x'=6);
+	[b] x=0 -> 0.5:(x'=5) + 0.5:(x'=4);
+	[c] x=6 -> 1.0:(x'=5);
+	[c] x=6 -> 0.8:(x'=3) + 0.2:(x'=1);
+	[c] x=6 -> 1.0:(x'=0);
+	[e] x=3 -> 1.0:(x'=2);
+	[f] x=2 -> 1.0:(x'=3);
+
+	
+endmodule
+
+
+
+rewards "rewards1"
+	[a] true : 1;
+	[e] true : 5;
+endrewards
+
+
+rewards "rewards2"
+    [a] true : 0.5;
+    [f] true : 5;
+endrewards

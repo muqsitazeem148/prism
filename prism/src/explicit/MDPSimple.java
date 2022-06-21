@@ -624,4 +624,9 @@ public class MDPSimple extends MDPExplicit implements NondetModelSimple
 		// TODO: compare actions (complicated: null = null,null,null,...)
 		return true;
 	}
+
+    public void setInitialState(int representative) {
+
+		this.initialStates.set(0, representative);
+    }
 }

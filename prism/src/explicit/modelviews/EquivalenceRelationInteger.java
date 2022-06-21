@@ -45,6 +45,8 @@ public class EquivalenceRelationInteger implements PairPredicateInt
 
 	public EquivalenceRelationInteger() {}
 
+
+
 	public EquivalenceRelationInteger(final Iterable<BitSet> equivalenceClasses)
 	{
 		for (BitSet equivalenceClass : equivalenceClasses) {
@@ -52,7 +54,9 @@ public class EquivalenceRelationInteger implements PairPredicateInt
 			case 0:
 				throw new IllegalArgumentException("expected non-empty classes");
 			case 1:
+
 				continue;
+
 			default:
 				for (Integer i : new IterableBitSet(equivalenceClass)) {
 					if (classes.put(i, equivalenceClass) != null) {

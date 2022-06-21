@@ -586,7 +586,7 @@ public class StateModelChecker extends PrismComponent
 		mainLog.print("\n" + resultString + "\n");
 
 		// Clean up
-		//vals.clear();
+		vals.clear();
 
 		// Return result
 		return result;
