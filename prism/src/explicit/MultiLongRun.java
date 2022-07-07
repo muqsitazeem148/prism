@@ -1,26 +1,20 @@
 package explicit;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
+import explicit.rewards.MDPRewards;
+import lpsolve.LpSolve;
 import parser.type.TypeBool;
 import parser.type.TypeDouble;
 import prism.Operator;
 import prism.Point;
 import prism.PrismException;
-import prism.PrismSettings;
+//import solvers.GurobiProxy;
 import solvers.LpSolverProxy;
 import solvers.SolverProxyInterface;
 import strat.MultiLongRunStrategy;
 
-import explicit.rewards.MDPRewards;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * This class contains functions used when solving
@@ -67,6 +61,12 @@ public class MultiLongRun {
 	/**
 	 * LP solver to be used
 	 */
+
+	private String lpsolver;
+
+	/**
+	 * MECdecomp or standart Linear programming
+	 */
 	private String method;
 	
 	/**
@@ -106,26 +106,29 @@ public class MultiLongRun {
 	 *        {@see PrismSettings.PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD}
 	 */
 	public MultiLongRun(MDP mdp, ArrayList<MDPRewards> rewards,
-			ArrayList<Operator> operators, ArrayList<Double> bounds, String method) {
+			ArrayList<Operator> operators, ArrayList<Double> bounds, String method, String lpsolver) {
 		this.mdp = mdp;
 		this.rewards = rewards;
 		this.operators = operators;
 		this.bounds = bounds;
 		this.method = method;
+		this.lpsolver = lpsolver;
 	}
 	
 	/**
 	 * Creates a new solver instance, based on the argument {@see #method}.
 	 * @throws PrismException If the jar file providing access to the required LP solver is not found.
 	 */
-	private void initialiseSolver(boolean memoryless) throws PrismException
+	private void initialiseSolver(boolean memoryless, boolean verbose) throws PrismException
 	{
 		try { //below Class.forName throws exception if the required jar is not present
-			if (method.equals("Linear programming") || method.equals("MEC decomposition")) {
+			if (lpsolver == "lpsolve" ) {
 				//create new solver
+				if(verbose) System.out.println("Using LPSolve as LP Solver");
 				solver = new LpSolverProxy(this.numRealLPVars, this.numBinaryLPVars);
-			} else if (method.equals("Gurobi")) {
+			} else if (lpsolver == "gurobi") {
 				Class<?> cl = Class.forName("solvers.GurobiProxy");
+				if(verbose) System.out.println("Using Gurobi as LP Solver");
 				solver = (SolverProxyInterface) cl.getConstructor(int.class, int.class).newInstance(this.numRealLPVars, this.numBinaryLPVars);
 			}
 			else throw new UnsupportedOperationException("The given method for solving LP programs is not supported: " + method);
@@ -699,18 +702,16 @@ public class MultiLongRun {
 	 * Objective function is not set at all, no matter if it is required.
 	 * @throws PrismException
 	 */
-	public void createMultiLongRunLP(boolean memoryless) throws PrismException {
+	public void createMultiLongRunLP(boolean memoryless, boolean verbose) throws PrismException {
 		if (!initialised) {
-			System.out.println("Computing end components.");
 			computeMECs();
-			System.out.println("Finished computing end components.");				
 			computeOffsets(memoryless);
 			initialised = true;
 		}
 		
 		double solverStartTime = System.currentTimeMillis(); 
 		
-		initialiseSolver(memoryless);
+		initialiseSolver(memoryless, verbose);
 					
 		nameLPVars(memoryless);
 		
@@ -739,7 +740,7 @@ public class MultiLongRun {
 		}
 		
 		double time = (System.currentTimeMillis() - solverStartTime) / 1000;
-		System.out.println("LP problem construction finished in " + time + " s.");
+		if (verbose) System.out.println("LP problem construction finished in " + time + " s.");
 	}
 	
 	/**
@@ -828,7 +829,7 @@ public class MultiLongRun {
 		//store old TODO what if called this twice?
 		double[] res = solver.getVariableValues();
 	
-		initialiseSolver(false);
+		initialiseSolver(false, false);
 		
 		//Set bounds to between 0 and 1
 		/*for (int i = 1; i < this.numLPVars; i++) {
@@ -968,10 +969,10 @@ public class MultiLongRun {
 		
 		Point p = new Point(2);
 		
-		if (r == lpsolve.LpSolve.INFEASIBLE) {
-			//return new Point(new double[] {0,0});//TODO other results
+		if ( (r >= 3 && solver.getClass() != LpSolverProxy.class ) || (r == LpSolve.INFEASIBLE && solver.getClass() == LpSolverProxy.class )) {
+			//return new Point(new double[] {0,0});//TODO add if to differentiate between gurobi and lpsolve status codes
 			throw new PrismException("Infeasible");
-		} else if (r == lpsolve.LpSolve.OPTIMAL) {
+		} else if ((r == 2 && solver.getClass() != LpSolverProxy.class )|| (r == LpSolve.OPTIMAL  && solver.getClass() == LpSolverProxy.class )) {
 			new Point(2);
 			
 			for(int i = 0; i < weights.getDimension(); i++) {

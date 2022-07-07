@@ -28,6 +28,7 @@
       <root url="jar://$PROJECT_DIR$/lib/txw2-2.3.1.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib/txw2-2.3.11.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib/log4j.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/gurobi.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

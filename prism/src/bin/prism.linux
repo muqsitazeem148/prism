@@ -79,7 +79,7 @@ done
 PRISM_CLASSPATH="$PRISM_DIR"/lib/prism.jar:"$PRISM_DIR"/classes:"$PRISM_DIR":"$PRISM_DIR"/lib/pepa.zip:"$PRISM_DIR"/lib/*
 
 # Set up pointers to libraries
-PRISM_LIB_PATH="$PRISM_DIR"/lib
+PRISM_LIB_PATH="$PRISM_DIR"/lib:/opt/gurobi951/linux64/lib
 
 # Copy library path to relevant vars
 LD_LIBRARY_PATH=${PRISM_LIB_PATH}${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}

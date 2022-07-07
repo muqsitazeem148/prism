@@ -3,14 +3,13 @@ mdp
 module server
 
 	s:[0..3];
-	i:[0..4];
-	j:[0..4];
+	i:[0..3];
+	j:[0..3];
 
 	// initial cancel loops
 	[client1_cancel] s=0 -> true;
 	[client2_cancel] s=0 -> true;
 	[client3_cancel] s=0 -> true;
-	[client4_cancel] s=0 -> true;
 	
 	// client i request/grant/cancel
 	[client1_request] s=0 -> (s'=1) & (i'=1);
@@ -22,9 +21,6 @@ module server
 	[client3_request] s=0 -> (s'=1) & (i'=3);
 	[client3_grant] s=1 & i=3 -> (s'=2);
 	[client3_cancel] s=2 & i=3 -> (s'=0) & (i'=0);
-	[client4_request] s=0 -> (s'=1) & (i'=4);
-	[client4_grant] s=1 & i=4 -> (s'=2);
-	[client4_cancel] s=2 & i=4 -> (s'=0) & (i'=0);
 	
 	// deny other requests when serving
 	[client1_request] s=2 -> (s'=3) & (j'=1);
@@ -33,14 +29,11 @@ module server
 	[client2_deny] s=3 & j=2 -> (s'=2) & (j'=0);
 	[client3_request] s=2 -> (s'=3) & (j'=3);
 	[client3_deny] s=3 & j=3 -> (s'=2) & (j'=0);
-	[client4_request] s=2 -> (s'=3) & (j'=4);
-	[client4_deny] s=3 & j=4 -> (s'=2) & (j'=0);
 	
 	// cancel loops when serving
 	[client1_cancel] s=2 & i!=1 -> true;
 	[client2_cancel] s=2 & i!=2 -> true;
 	[client3_cancel] s=2 & i!=3 -> true;
-	[client4_cancel] s=2 & i!=4 -> true;
 		
 endmodule
 
@@ -71,24 +64,17 @@ client1_useResource=client3_useResource, client1_cancel=client3_cancel]
 
 endmodule
 
-module client4 = client1[ c1=c4, client1_ch_mind=client4_ch_mind, client1_request=client4_request,
-client1_deny=client4_deny, client1_grant=client4_grant,
-client1_useResource=client4_useResource, client1_cancel=client4_cancel]
-
-endmodule
 
 
 rewards "grants"
 	[client1_grant] true : 1;
 	[client2_grant] true : 1;
 	[client3_grant] true : 1;
-	[client4_grant] true : 1;
 endrewards
 
-rewards "useResource"
-	[client1_useResource] true : 1;
-	[client2_useResource] true : 1;
-	[client3_useResource] true : 1;
-	[client4_useResource] true : 1;
+rewards "requests"
+	[client1_request] true : 1;
+	[client2_request] true : 1;
+	[client3_request] true : 1;
 endrewards
 

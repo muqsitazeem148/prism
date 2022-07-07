@@ -26,10 +26,6 @@
 
 package explicit;
 
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
 import acceptance.AcceptanceReach;
 import acceptance.AcceptanceType;
 import common.IntSet;
@@ -40,13 +36,15 @@ import explicit.modelviews.EquivalenceRelationInteger;
 import explicit.modelviews.MDPDroppedAllChoices;
 import explicit.modelviews.MDPEquiv;
 import explicit.rewards.*;
-import parser.State;
 import parser.ast.*;
 import parser.type.TypeDouble;
 import parser.type.TypeVoid;
-import prism.*;
 import prism.Filter;
+import prism.*;
 import strat.MDStrategyArray;
+
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * Explicit-state model checker for Markov decision processes (MDPs).
@@ -67,7 +65,8 @@ public class MDPModelChecker extends ProbModelChecker
 	@Override
 	protected StateValues checkExpressionMultiObjMEC(Model model, ExpressionFunc expr) throws PrismException
 	{
-		boolean memoryless;
+		String lpsolver = this.settings.getString(PrismSettings.PRISM_MDP_MULTI_LPSOLVER);
+		boolean memoryless = false;
 		if (((ExpressionFunc) expr).getName().equals("multi"))
 			memoryless = false;
 		else if (((ExpressionFunc) expr).getName().equals("mlessmulti"))
@@ -177,6 +176,7 @@ public class MDPModelChecker extends ProbModelChecker
 		List<BitSet> mecs = ecc.getMECStates();
 
 		mainLog.println("Number of MECs: "+mecs.size() );
+		mainLog.println("LPSolver: " + lpsolver);
 
 		//Perform LP optimization on every discovered MEC, store the respective solutions in sols.
 		//Therefore we have to construct the MEC-restricted MDP for every MEC
@@ -284,7 +284,6 @@ public class MDPModelChecker extends ProbModelChecker
 	 * This currently only supports maximizing 2 rewards.
 	 */
 	private StateValues checkExpressionQuotient(MDP quotientModel, List<MDPRewards> rewards, ExpressionFunc expr) throws PrismException {
-		//verbose=false;
 		double term_crit_param = settings.getDouble(PrismSettings.PRISM_TERM_CRIT_PARAM);
 		WeightedVI weightedVI = new WeightedVI(quotientModel, rewards, maxIters, term_crit_param);
 
@@ -467,9 +466,10 @@ public class MDPModelChecker extends ProbModelChecker
 		}
 
 		String method = this.settings.getString(PrismSettings.PRISM_MDP_MULTI_SOLN_METHOD);
-		MultiLongRun mlr = new MultiLongRun((MDP) model, rewards, operators, bounds, method);
+		String lpsolver = this.settings.getString(PrismSettings.PRISM_MDP_MULTI_LPSOLVER);
+		MultiLongRun mlr = new MultiLongRun((MDP) model, rewards, operators, bounds, method, lpsolver);
 		StateValues sv = null;
-		mlr.createMultiLongRunLP(memoryless);
+		mlr.createMultiLongRunLP(memoryless, false);
 		if (numericalCount > 0 && memoryless) {
 			throw new PrismException("mlessmulti can only be used for non-numerical queries" +
 					" (optimal memoryless strategies might not exist, and so max/min would not apply)");
@@ -494,7 +494,7 @@ public class MDPModelChecker extends ProbModelChecker
 			//mainLog.println("p2 " + p2);
 
 			int numberOfPoints = 2;
-			boolean verbose = true;
+			boolean verbose = false;
 			Tile initialTile = new Tile(pointsForInitialTile);
 			TileList tileList = new TileList(initialTile, null, 10e-3);
 

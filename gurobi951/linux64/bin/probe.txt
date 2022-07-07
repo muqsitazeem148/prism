@@ -1,0 +1,7 @@
+info  : grbprobe version 9.5.1, build v9.5.1rc2
+HOSTNAME=niklas-VirtualBox
+HOSTID=2756349a
+PLATFORM=linux64
+USERNAME=niklas
+CORES=6
+CPU=AMD Ryzen 5 2600X Six-Core Processor

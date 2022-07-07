@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/ext/lp_solve_5.5_java/src/lp_solve_5.5_java.iml" filepath="$PROJECT_DIR$/ext/lp_solve_5.5_java/src/lp_solve_5.5_java.iml" />
       <module fileurl="file://$PROJECT_DIR$/prism.iml" filepath="$PROJECT_DIR$/prism.iml" />
     </modules>
   </component>

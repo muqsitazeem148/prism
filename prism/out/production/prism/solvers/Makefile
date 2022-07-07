@@ -8,6 +8,7 @@
 # Reminder: $@ = target, $* = target without extension, $< = dependency
 
 THIS_DIR = solvers
+OSLIB=libGurobiJni95.so
 PRISM_DIR_REL = ../..
 
 JAVA_FILES_ALL = $(wildcard *.java)

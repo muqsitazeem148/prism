@@ -11,6 +11,7 @@ module server
 	[client2_cancel] s=0 -> true;
 	[client3_cancel] s=0 -> true;
 	[client4_cancel] s=0 -> true;
+	[client5_cancel] s=0 -> true;
 	
 	// client i request/grant/cancel
 	[client1_request] s=0 -> (s'=1) & (i'=1);

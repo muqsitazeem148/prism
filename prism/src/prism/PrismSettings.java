@@ -28,18 +28,16 @@
 
 package prism;
 
-import java.util.*;
-import java.io.*;
-import java.awt.*;
-
-import javax.swing.*;
-
 import common.iterable.Range;
 import explicit.QuantAbstractRefine;
-
-import java.util.regex.*;
-
 import settings.*;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PrismSettings implements Observer
 {
@@ -96,6 +94,8 @@ public class PrismSettings implements Observer
 	public static final	String PRISM_INTERVAL_ITER_OPTIONS			= "prism.intervalIterOptions";
 	public static final	String PRISM_MDP_SOLN_METHOD				= "prism.mdpSolnMethod";
 	public static final	String PRISM_MDP_MULTI_SOLN_METHOD			= "prism.mdpMultiSolnMethod";
+
+	public static final	String PRISM_MDP_MULTI_LPSOLVER		= "prism.mdpMultiLPSolver";
 	public static final	String PRISM_TERM_CRIT						= "prism.termCrit";//"prism.termination";
 	public static final	String PRISM_TERM_CRIT_PARAM				= "prism.termCritParam";//"prism.terminationEpsilon";
 	public static final	String PRISM_MAX_ITERS						= "prism.maxIters";//"prism.maxIterations";
@@ -267,6 +267,8 @@ public class PrismSettings implements Observer
 																			"Which method to use when solving Markov decision processes." },
 			{ CHOICE_TYPE,		PRISM_MDP_MULTI_SOLN_METHOD,			"MDP multi-objective solution method",				"4.0.3",			"Value iteration",											"Value iteration,Gauss-Seidel,Linear programming,MEC decomposition",
 																			"Which method to use when solving multi-objective queries on Markov decision processes." },
+            { CHOICE_TYPE,		PRISM_MDP_MULTI_LPSOLVER,			"LP Solver used for multi-oobjective MDPs",				"4.0.3",			"lpsolve",											"gurobi,lpsolve",
+						"Which lp solver to use when solving multi-objective queries on Markov decision processes." },
 			{ CHOICE_TYPE,		PRISM_TERM_CRIT,						"Termination criteria",					"2.1",			"Relative",																	"Absolute,Relative",																		
 																			"Criteria to use for checking termination of iterative numerical methods." },
 			{ DOUBLE_TYPE,		PRISM_TERM_CRIT_PARAM,					"Termination epsilon",					"2.1",			Double.valueOf(1.0E-6),															"0.0,",																						
@@ -455,7 +457,8 @@ public class PrismSettings implements Observer
 	};
 	
 	public static final String[] oldPropertyNames =  {"simulator.apmcStrategy", "simulator.engine", "simulator.newPathAskDefault"};
-	
+
+
 	public DefaultSettingOwner[] optionOwners;
 	private Hashtable<String,Setting> data;
 	private boolean modified;
@@ -1102,7 +1105,12 @@ public class PrismSettings implements Observer
 		} else if (sw.equals("mecdecomp")) {
 			set(PRISM_MDP_SOLN_METHOD, "Linear programming");
 			set(PRISM_MDP_MULTI_SOLN_METHOD, "MEC decomposition");
-		}
+		} else if (sw.equals("lpsolve")) {
+		set(PRISM_MDP_MULTI_LPSOLVER, "lpsolve");
+		} else if (sw.equals("gurobi")) {
+			set(PRISM_MDP_MULTI_LPSOLVER, "gurobi");
+	}
+
 
 		// Interval iterations
 		else if (sw.equals("intervaliter") ||
