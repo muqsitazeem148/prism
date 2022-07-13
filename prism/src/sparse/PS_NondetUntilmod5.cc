@@ -323,8 +323,8 @@ jlong _strat				// strategy storage
 	printf("Number of approximated usefull states: %d ", right);
 
 	printf("\nUseful & useless states:\n");
-	for(i = 0; i < n; i++)
-		printf(is_usefull[i]? "1\n" : "0\n");
+	//for(i = 0; i < n; i++)
+	//	printf(is_usefull[i]? "1\n" : "0\n");
 
 	int* Q = new int[right+1];
 	j = 0;
