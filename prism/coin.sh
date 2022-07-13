@@ -1,4 +1,4 @@
-for K in 10 25 50 75 100; do
+for K in 10; do
 for prop in 3 4; do
 
 echo "logs/pred/usefull_states/coin/coin_"$K"_prop"$prop"_uf.log" > addr.txt
@@ -7,9 +7,9 @@ echo "logs/pred/usefull_states/coin/coin_"$K"_prop"$prop"_uf.log" > addr.txt
 echo "logs/pred/optimal_policies/coin/coin_"$K"_prop"$prop"_op.log" > addr.txt
 ./bin/prism ../prism-examples/mdps/consensus/coin4.nm ../prism-examples/mdps/consensus/coin.pctl -noprob1 -maxiters 9000500 -s -prop $prop -const K=$K -mod5 > logs/compare/policy_based/coin/coin_4_$K\_prop$prop\_policy_based.log
 
-./bin/prism ../prism-examples/mdps/consensus/coin4.nm ../prism-examples/mdps/consensus/coin.pctl -noprob1 -maxiters 9000500 -s -prop $prop -const K=$K > logs/compare/standard/coin/coin_4_$K\_prop$prop\.log
+#./bin/prism ../prism-examples/mdps/consensus/coin4.nm ../prism-examples/mdps/consensus/coin.pctl -noprob1 -maxiters 9000500 -s -prop $prop -const K=$K > logs/compare/standard/coin/coin_4_$K\_prop$prop\.log
 
-./bin/prism ../prism-examples/mdps/consensus/coin4.nm -s -const K=$K  -exportstates logs/states/coin/coin_4_$K\.sta
+#./bin/prism ../prism-examples/mdps/consensus/coin4.nm -s -const K=$K  -exportstates logs/states/coin/coin_4_$K\.sta
 
 done
 done
