@@ -16,7 +16,6 @@ done
 
 exit
 
-
 for K in 4 5 6 8 7 9; do
 
 ./bin/prism ../prism-examples/mdps/consensus/coin4.nm ../prism-examples/mdps/consensus/coin.pctl -s -prop 4 -const K=$K -noprob1 -mod1 -maxiters 900050 > logs/uf_states/coin/coin_4_$K\_pmax_uf.log

@@ -1,1 +1,1 @@
-Results for policy_based reduction approaches are located here.
+Results for policy_based reduction approaches are located here in separate files.
