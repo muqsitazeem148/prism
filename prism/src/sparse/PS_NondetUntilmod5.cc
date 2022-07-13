@@ -332,7 +332,7 @@ jlong _strat				// strategy storage
 		if(is_usefull[i])
 			Q[j++] = i;
 	int ind;
-	done = true;
+	done = false; 
 	while (!done && iters < max_iters) {
 		diff = 0;
 		iters++;		

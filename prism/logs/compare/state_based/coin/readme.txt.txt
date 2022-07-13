@@ -1,0 +1,1 @@
+Results for running coin cases over the available data from DT.
