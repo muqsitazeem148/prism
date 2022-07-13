@@ -1,9 +1,9 @@
 for dl in 4; do
 for ddl in 5000 7500 10000; do
 
-echo "logs/pred/usefull_states/firewire/firewire_uf_"$dl"_"$ddl".log" > addr.txt
+echo "logs/pred/useful_states/firewire/firewire_uf_"$dl"_"$ddl".log" > addr.txt
 
-./bin/prism ../prism-examples/mdps/firewire/abst/deadline.nm ../prism-examples/mdps/firewire/abst/deadline.pctl -s -const delay=$dl,deadline=$ddl,fast=.1 -noprob1 -mod3 > logs/compare/state_based/firewire/firewire_$dl\_$ddl\_usefull_states.log
+./bin/prism ../prism-examples/mdps/firewire/abst/deadline.nm ../prism-examples/mdps/firewire/abst/deadline.pctl -s -const delay=$dl,deadline=$ddl,fast=.1 -noprob1 -mod3 > logs/compare/state_based/firewire/firewire_$dl\_$ddl\_useful_states.log
 
 
 echo "logs/pred/optimal_policies/firewire/firewire_op_"$dl"_"$ddl".log" > addr.txt

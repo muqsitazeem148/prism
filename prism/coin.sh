@@ -1,8 +1,8 @@
 for K in 10; do
 for prop in 3 4; do
 
-echo "logs/pred/usefull_states/coin/coin_"$K"_prop"$prop"_uf.log" > addr.txt
-./bin/prism ../prism-examples/mdps/consensus/coin4.nm ../prism-examples/mdps/consensus/coin.pctl -noprob1 -maxiters 9000500 -s -prop $prop -const K=$K -mod3 > logs/compare/state_based/coin/coin_4_$K\_prop$prop\_usefull_states.log
+echo "logs/pred/useful_states/coin/coin_"$K"_prop"$prop"_uf.log" > addr.txt
+./bin/prism ../prism-examples/mdps/consensus/coin4.nm ../prism-examples/mdps/consensus/coin.pctl -noprob1 -maxiters 9000500 -s -prop $prop -const K=$K -mod3 > logs/compare/state_based/coin/coin_4_$K\_prop$prop\_useful_states.log
 
 echo "logs/pred/optimal_policies/coin/coin_"$K"_prop"$prop"_op.log" > addr.txt
 ./bin/prism ../prism-examples/mdps/consensus/coin4.nm ../prism-examples/mdps/consensus/coin.pctl -noprob1 -maxiters 9000500 -s -prop $prop -const K=$K -mod5 #> logs/compare/policy_based/coin/coin_4_$K\_prop$prop\_policy_based.log

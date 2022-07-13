@@ -9,7 +9,11 @@ Source files for the implementation of the paper's approaches are located in: /p
 
 Log files are located in prism/paper-logs/compare
 
-To run experiments extract the .zip files in the “Opt_policies” and “uf_states” folders and then run the shell scripts (coin.sh,…).
+To run experiments extract the .zip files in the “pred/optimal_policies” and “pred/useful_states” folders and then run the shell scripts (coin.sh,…).
+The proposed files in the the pred/.. folders stores the results of running decision trees on the state-plaintexts for large models
+
+The results of running experiments (executing the .sh script files) will be stored in some folders in logs/compares/
+
 *********************************************************************
 
 ## Installation
