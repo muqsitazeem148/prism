@@ -14,6 +14,9 @@ The proposed files in the the pred/.. folders stores the results of running deci
 
 The results of running experiments (executing the .sh script files) will be stored in some folders in logs/compares/
 
+Note: Because the proposed approach is based on applying DFS starting from the initial state, for the "coin" and "mer" case studies
+some modification should be done in the "PS_NondetUntilmod1" and "PS_NondetUntilmod5" files to set the initial states correctly.
+
 *********************************************************************
 
 ## Installation
